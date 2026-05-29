@@ -9,6 +9,7 @@ export const FireCalculator: React.FC = () => {
   const [monthlySavings, setMonthlySavings] = useState<number>(1000);
   const [rate, setRate] = useState<number>(7);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [graphType, setGraphType] = useState<'line' | 'bar'>('line');
 
   // Compute FIRE projections
   const result = useMemo(() => 
@@ -259,9 +260,25 @@ export const FireCalculator: React.FC = () => {
 
         {/* Compounding Accumulation Graph */}
         <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-3xl p-6 flex-1 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-300">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)] mb-4">
-            Wealth Accumulation vs FIRE Target
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)]">
+              Wealth Accumulation vs FIRE Target
+            </h3>
+            <div className="flex bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl p-0.5 text-xs select-none">
+              <button 
+                onClick={() => setGraphType('line')}
+                className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'line' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+              >
+                Line
+              </button>
+              <button 
+                onClick={() => setGraphType('bar')}
+                className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'bar' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+              >
+                Bar
+              </button>
+            </div>
+          </div>
 
           <div className="relative w-full flex items-center justify-center">
             <svg 
@@ -275,7 +292,7 @@ export const FireCalculator: React.FC = () => {
               <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--theme-border)" strokeWidth="1" />
 
               {/* FIRE Target line */}
-              <path d={points.targetLine} stroke="#f59e0b" strokeWidth="2" strokeDasharray="5 3" className="transition-all duration-500" />
+              <path d={points.targetLine} stroke="#f59e0b" strokeWidth="2" strokeDasharray="5 3" className="transition-all duration-500 z-10" />
 
               {/* Hover Guide Line */}
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (
@@ -291,8 +308,40 @@ export const FireCalculator: React.FC = () => {
                 />
               )}
 
-              {/* Accumulated Wealth line */}
-              <path d={points.line} stroke="var(--theme-accent)" strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-500 animate-graph-line graph-glow" />
+              {/* Graph Type Selection Conditional Rendering */}
+              {graphType === 'line' ? (
+                <>
+                  {/* Accumulated Wealth line */}
+                  <path d={points.line} stroke="var(--theme-accent)" strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-500 animate-graph-line graph-glow" />
+                </>
+              ) : (
+                <g>
+                  {points.coordinates.map((c, i) => {
+                    const stepX = points.coordinates.length > 1 ? (chartWidth - padding * 2) / (points.coordinates.length - 1) : chartWidth - padding * 2;
+                    const barWidth = Math.max(3, stepX * 0.7);
+                    
+                    const maxVal = Math.max(result.fireTarget, ...result.yearlyBalances.map(b => b.balance), 100);
+                    const balanceHeight = (c.data.balance / maxVal) * (chartHeight - padding * 2);
+
+                    const isHovered = hoveredIdx === i;
+                    const isAnyHovered = hoveredIdx !== null;
+
+                    return (
+                      <rect
+                        key={i}
+                        x={c.x - barWidth / 2}
+                        y={chartHeight - padding - balanceHeight}
+                        width={barWidth}
+                        height={balanceHeight}
+                        fill="url(#fireBarGrad)"
+                        rx={1.5}
+                        className="transition-all duration-500"
+                        style={{ opacity: isAnyHovered ? (isHovered ? 1 : 0.6) : 1 }}
+                      />
+                    );
+                  })}
+                </g>
+              )}
 
               {/* Interactive Hover Dots */}
               {points.coordinates.map((c, i) => (
@@ -321,6 +370,13 @@ export const FireCalculator: React.FC = () => {
                   />
                 </g>
               ))}
+
+              <defs>
+                <linearGradient id="fireBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--theme-accent)" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="var(--theme-accent)" stopOpacity="0.7" />
+                </linearGradient>
+              </defs>
             </svg>
 
             {/* Custom Tooltip */}

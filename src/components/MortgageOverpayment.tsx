@@ -9,6 +9,7 @@ export const MortgageOverpayment: React.FC = () => {
   const [monthlyOverpay, setMonthlyOverpay] = useState<number>(200);
   const [oneOffOverpay, setOneOffOverpay] = useState<number>(5000);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [graphType, setGraphType] = useState<'line' | 'bar'>('line');
 
   // Compute mortgage metrics
   const result = useMemo(() => 
@@ -253,9 +254,25 @@ export const MortgageOverpayment: React.FC = () => {
 
         {/* Graph Display Card */}
         <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-3xl p-6 flex-1 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-300">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)] mb-4">
-            Debt Reduction Trajectory
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)]">
+              Debt Reduction Trajectory
+            </h3>
+            <div className="flex bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl p-0.5 text-xs select-none">
+              <button 
+                onClick={() => setGraphType('line')}
+                className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'line' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+              >
+                Line
+              </button>
+              <button 
+                onClick={() => setGraphType('bar')}
+                className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'bar' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+              >
+                Bar
+              </button>
+            </div>
+          </div>
 
           <div className="relative w-full flex items-center justify-center">
             <svg 
@@ -267,10 +284,6 @@ export const MortgageOverpayment: React.FC = () => {
               <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
               <line x1={padding} y1={chartHeight/2} x2={chartWidth - padding} y2={chartHeight/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
               <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--theme-border)" strokeWidth="1" />
-
-              {/* Trajectory lines */}
-              <path d={points.standardLine} stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="4 2" strokeLinecap="round" className="transition-all duration-500 animate-graph-line" />
-              <path d={points.overpaidLine} stroke="var(--theme-accent)" strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-500 animate-graph-line graph-glow" />
 
               {/* Hover Guide Line */}
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (
@@ -284,6 +297,58 @@ export const MortgageOverpayment: React.FC = () => {
                   strokeDasharray="4 4"
                   className="opacity-50 pointer-events-none"
                 />
+              )}
+
+              {/* Graph Type Selection Conditional Rendering */}
+              {graphType === 'line' ? (
+                <>
+                  {/* Trajectory lines */}
+                  <path d={points.standardLine} stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="4 2" strokeLinecap="round" className="transition-all duration-500 animate-graph-line" />
+                  <path d={points.overpaidLine} stroke="var(--theme-accent)" strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-500 animate-graph-line graph-glow" />
+                </>
+              ) : (
+                <g>
+                  {points.coordinates.map((c, i) => {
+                    const stepX = points.coordinates.length > 1 ? (chartWidth - padding * 2) / (points.coordinates.length - 1) : chartWidth - padding * 2;
+                    const barWidth = Math.max(2, stepX * 0.35);
+                    
+                    const maxVal = balance;
+                    const standardHeight = (c.data.standardBalance / maxVal) * (chartHeight - padding * 2);
+                    const overpaidHeight = (c.data.overpaidBalance / maxVal) * (chartHeight - padding * 2);
+
+                    const isHovered = hoveredIdx === i;
+                    const isAnyHovered = hoveredIdx !== null;
+
+                    return (
+                      <g 
+                        key={i} 
+                        className="transition-all duration-300"
+                        style={{ opacity: isAnyHovered ? (isHovered ? 1 : 0.6) : 1 }}
+                      >
+                        {/* Standard Balance Bar */}
+                        <rect
+                          x={c.x - barWidth - 1}
+                          y={chartHeight - padding - standardHeight}
+                          width={barWidth}
+                          height={standardHeight}
+                          fill="url(#mortgageStandardBarGrad)"
+                          rx={1}
+                          className="transition-all duration-500"
+                        />
+                        {/* Overpaid Balance Bar */}
+                        <rect
+                          x={c.x + 1}
+                          y={chartHeight - padding - overpaidHeight}
+                          width={barWidth}
+                          height={overpaidHeight}
+                          fill="url(#mortgageOverpaidBarGrad)"
+                          rx={1}
+                          className="transition-all duration-500"
+                        />
+                      </g>
+                    );
+                  })}
+                </g>
               )}
 
               {/* Interactive Hover Dots */}
@@ -315,6 +380,17 @@ export const MortgageOverpayment: React.FC = () => {
                   />
                 </g>
               ))}
+
+              <defs>
+                <linearGradient id="mortgageStandardBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.75" />
+                  <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.45" />
+                </linearGradient>
+                <linearGradient id="mortgageOverpaidBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--theme-accent)" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="var(--theme-accent)" stopOpacity="0.7" />
+                </linearGradient>
+              </defs>
             </svg>
 
             {/* Custom Tooltip */}

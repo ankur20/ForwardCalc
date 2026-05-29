@@ -8,6 +8,7 @@ export const SipCalculator: React.FC = () => {
   const [rate, setRate] = useState<number>(10);
   const [years, setYears] = useState<number>(15);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [graphType, setGraphType] = useState<'line' | 'bar'>('line');
 
   // Compute SIP values
   const result = useMemo(() => calculateSip(monthly, rate, years, initialBalance), [monthly, rate, years, initialBalance]);
@@ -224,9 +225,25 @@ export const SipCalculator: React.FC = () => {
 
         {/* Graph Display Card */}
         <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-3xl p-6 flex-1 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-300">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)] mb-4">
-            Investment Growth Trajectory
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)]">
+              Investment Growth Trajectory
+            </h3>
+            <div className="flex bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl p-0.5 text-xs select-none">
+              <button 
+                onClick={() => setGraphType('line')}
+                className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'line' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+              >
+                Line
+              </button>
+              <button 
+                onClick={() => setGraphType('bar')}
+                className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'bar' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+              >
+                Bar
+              </button>
+            </div>
+          </div>
 
           <div className="relative w-full flex items-center justify-center">
             <svg 
@@ -238,10 +255,6 @@ export const SipCalculator: React.FC = () => {
               <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
               <line x1={padding} y1={chartHeight/2} x2={chartWidth - padding} y2={chartHeight/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
               <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--theme-border)" strokeWidth="1" />
-
-              {/* Area filled paths */}
-              <path d={points.total} fill="url(#totalGrad)" className="transition-all duration-500" />
-              <path d={points.invested} fill="url(#investedGrad)" className="transition-all duration-500" />
 
               {/* Hover Guide Line */}
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (
@@ -257,8 +270,61 @@ export const SipCalculator: React.FC = () => {
                 />
               )}
 
-              {/* Line paths */}
-              <path d={points.line} stroke="var(--theme-accent)" strokeWidth="3" strokeLinecap="round" className="transition-all duration-500 animate-graph-line graph-glow" />
+              {/* Graph Type Selection Conditional Rendering */}
+              {graphType === 'line' ? (
+                <>
+                  {/* Area filled paths */}
+                  <path d={points.total} fill="url(#totalGrad)" className="transition-all duration-500" />
+                  <path d={points.invested} fill="url(#investedGrad)" className="transition-all duration-500" />
+
+                  {/* Line paths */}
+                  <path d={points.line} stroke="var(--theme-accent)" strokeWidth="3" strokeLinecap="round" className="transition-all duration-500 animate-graph-line graph-glow" />
+                </>
+              ) : (
+                <g>
+                  {points.coordinates.map((c, i) => {
+                    const stepX = points.coordinates.length > 1 ? (chartWidth - padding * 2) / (points.coordinates.length - 1) : chartWidth - padding * 2;
+                    const barWidth = Math.max(3, stepX * 0.7);
+                    
+                    const maxVal = Math.max(...result.yearlyData.map(d => d.totalValue), 100);
+                    const totalHeight = (c.data.totalValue / maxVal) * (chartHeight - padding * 2);
+                    const investedHeight = (c.data.invested / maxVal) * (chartHeight - padding * 2);
+                    const growthHeight = Math.max(0, totalHeight - investedHeight);
+
+                    const isHovered = hoveredIdx === i;
+                    const isAnyHovered = hoveredIdx !== null;
+
+                    return (
+                      <g 
+                        key={i} 
+                        className="transition-all duration-300"
+                        style={{ opacity: isAnyHovered ? (isHovered ? 1 : 0.6) : 1 }}
+                      >
+                        {/* Invested portion rect */}
+                        <rect
+                          x={c.x - barWidth / 2}
+                          y={chartHeight - padding - investedHeight}
+                          width={barWidth}
+                          height={investedHeight}
+                          fill="url(#barInvestedGrad)"
+                          rx={1.5}
+                          className="transition-all duration-500"
+                        />
+                        {/* Growth portion rect */}
+                        <rect
+                          x={c.x - barWidth / 2}
+                          y={chartHeight - padding - totalHeight}
+                          width={barWidth}
+                          height={growthHeight}
+                          fill="url(#barGrowthGrad)"
+                          rx={1.5}
+                          className="transition-all duration-500"
+                        />
+                      </g>
+                    );
+                  })}
+                </g>
+              )}
 
               {/* Interactive Hover Dots */}
               {points.coordinates.map((c, i) => (
@@ -299,6 +365,14 @@ export const SipCalculator: React.FC = () => {
                 <linearGradient id="investedGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.15" />
                   <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.0" />
+                </linearGradient>
+                <linearGradient id="barGrowthGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--theme-accent)" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="var(--theme-accent)" stopOpacity="0.7" />
+                </linearGradient>
+                <linearGradient id="barInvestedGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.7" />
+                  <stop offset="100%" stopColor="#94a3b8" stopOpacity="0.4" />
                 </linearGradient>
               </defs>
             </svg>

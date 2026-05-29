@@ -8,6 +8,7 @@ export const SwpCalculator: React.FC = () => {
   const [rate, setRate] = useState<number>(6);
   const [years, setYears] = useState<number>(25);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [graphType, setGraphType] = useState<'line' | 'bar'>('line');
 
   // Compute SWP values
   const result = useMemo(() => calculateSwp(pot, withdrawal, rate, years), [pot, withdrawal, rate, years]);
@@ -224,12 +225,28 @@ export const SwpCalculator: React.FC = () => {
             <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)]">
               Retirement Capital Over Time
             </h3>
-            {result.isDepleted && (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-rose-500 uppercase bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20">
-                <Flame className="w-3 h-3" />
-                <span>Depletion Risk</span>
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {result.isDepleted && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-rose-500 uppercase bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20 animate-pulse">
+                  <Flame className="w-3 h-3" />
+                  <span>Depletion Risk</span>
+                </span>
+              )}
+              <div className="flex bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl p-0.5 text-xs select-none">
+                <button 
+                  onClick={() => setGraphType('line')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'line' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+                >
+                  Line
+                </button>
+                <button 
+                  onClick={() => setGraphType('bar')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'bar' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
+                >
+                  Bar
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="relative w-full flex items-center justify-center">
@@ -242,9 +259,6 @@ export const SwpCalculator: React.FC = () => {
               <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
               <line x1={padding} y1={chartHeight/2} x2={chartWidth - padding} y2={chartHeight/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
               <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--theme-border)" strokeWidth="1" />
-
-              {/* Area filled paths */}
-              <path d={points.area} fill="url(#balanceGrad)" className="transition-all duration-500" />
 
               {/* Hover Guide Line */}
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (
@@ -260,14 +274,49 @@ export const SwpCalculator: React.FC = () => {
                 />
               )}
 
-              {/* Line paths */}
-              <path 
-                d={points.line} 
-                stroke={result.isDepleted ? '#ef4444' : 'var(--theme-accent)'} 
-                strokeWidth="3" 
-                strokeLinecap="round" 
-                className="transition-all duration-500 animate-graph-line graph-glow" 
-              />
+              {/* Graph Type Selection Conditional Rendering */}
+              {graphType === 'line' ? (
+                <>
+                  {/* Area filled paths */}
+                  <path d={points.area} fill="url(#balanceGrad)" className="transition-all duration-500" />
+
+                  {/* Line paths */}
+                  <path 
+                    d={points.line} 
+                    stroke={result.isDepleted ? '#ef4444' : 'var(--theme-accent)'} 
+                    strokeWidth="3" 
+                    strokeLinecap="round" 
+                    className="transition-all duration-500 animate-graph-line graph-glow" 
+                  />
+                </>
+              ) : (
+                <g>
+                  {points.coordinates.map((c, i) => {
+                    const stepX = points.coordinates.length > 1 ? (chartWidth - padding * 2) / (points.coordinates.length - 1) : chartWidth - padding * 2;
+                    const barWidth = Math.max(3, stepX * 0.7);
+                    
+                    const maxVal = Math.max(pot, ...result.yearlyData.map(d => d.balance), 100);
+                    const balanceHeight = (c.data.balance / maxVal) * (chartHeight - padding * 2);
+
+                    const isHovered = hoveredIdx === i;
+                    const isAnyHovered = hoveredIdx !== null;
+
+                    return (
+                      <rect
+                        key={i}
+                        x={c.x - barWidth / 2}
+                        y={chartHeight - padding - balanceHeight}
+                        width={barWidth}
+                        height={balanceHeight}
+                        fill={result.isDepleted && c.data.balance === 0 ? "rgba(239, 68, 68, 0.1)" : (result.isDepleted ? "url(#swpBarDepletedGrad)" : "url(#swpBarGrad)")}
+                        rx={1.5}
+                        className="transition-all duration-500"
+                        style={{ opacity: isAnyHovered ? (isHovered ? 1 : 0.6) : 1 }}
+                      />
+                    );
+                  })}
+                </g>
+              )}
 
               {/* Interactive Hover Dots */}
               {points.coordinates.map((c, i) => (
@@ -304,6 +353,14 @@ export const SwpCalculator: React.FC = () => {
                 <linearGradient id="balanceGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor={result.isDepleted ? '#ef4444' : 'var(--theme-accent)'} stopOpacity="0.25" />
                   <stop offset="100%" stopColor={result.isDepleted ? '#ef4444' : 'var(--theme-accent)'} stopOpacity="0.0" />
+                </linearGradient>
+                <linearGradient id="swpBarGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--theme-accent)" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="var(--theme-accent)" stopOpacity="0.7" />
+                </linearGradient>
+                <linearGradient id="swpBarDepletedGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.95" />
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0.7" />
                 </linearGradient>
               </defs>
             </svg>
