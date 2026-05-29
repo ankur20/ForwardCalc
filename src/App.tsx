@@ -238,8 +238,10 @@ function App() {
                 return (
                   <div
                     key={`empty-${slotIndex}`}
-                    className={`relative flex items-center justify-center p-3.5 rounded-2xl border border-dashed border-[var(--theme-border)] text-[var(--theme-text)] opacity-60 hover:opacity-100 hover:bg-[var(--theme-accent-light)]/20 hover:border-[var(--theme-accent)]/30 hover:text-[var(--theme-accent)] transition-all duration-300 cursor-pointer min-h-[64px] ${
-                      openDropdownSlotIndex === slotIndex ? 'bg-[var(--theme-accent-light)]/20 border-[var(--theme-accent)]/30 text-[var(--theme-accent)]' : ''
+                    className={`relative flex items-center justify-center p-3.5 rounded-2xl border border-dashed border-[var(--theme-border)] text-[var(--theme-text)] transition-all duration-300 cursor-pointer min-h-[64px] ${
+                      openDropdownSlotIndex === slotIndex
+                        ? 'bg-[var(--theme-accent-light)]/20 border-[var(--theme-accent)]/30 text-[var(--theme-accent)] opacity-100'
+                        : 'opacity-60 hover:opacity-100 hover:bg-[var(--theme-accent-light)]/10 hover:border-[var(--theme-accent)]/20'
                     }`}
                     onClick={() => setOpenDropdownSlotIndex(slotIndex)}
                   >
@@ -258,7 +260,7 @@ function App() {
                             setOpenDropdownSlotIndex(null);
                           }} 
                         />
-                        <div className="absolute left-1/2 -translate-x-1/2 lg:left-auto lg:right-0 lg:translate-x-0 top-full mt-2 w-72 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-lg p-2.5 z-50 animate-fade-in flex flex-col gap-1">
+                        <div className="absolute left-1/2 -translate-x-1/2 lg:left-auto lg:right-0 lg:translate-x-0 top-full mt-2 w-72 rounded-2xl dropdown-solid border border-[var(--theme-border)] shadow-lg p-2.5 z-50 animate-fade-in flex flex-col gap-1">
                           <div className="text-[10px] uppercase font-black tracking-widest text-[var(--theme-text)] opacity-50 px-2.5 py-1.5 border-b border-[var(--theme-border)]">
                             Choose Calculator
                           </div>
@@ -298,11 +300,21 @@ function App() {
 
         {/* Active Panel View */}
         <div className="w-full transition-all duration-500">
-          {activeTab === 'sip' && <SipCalculator locale={locale} />}
-          {activeTab === 'swp' && <SwpCalculator locale={locale} />}
-          {activeTab === 'mortgage' && <MortgageOverpayment locale={locale} />}
-          {activeTab === 'fire' && <FireCalculator locale={locale} />}
-          {activeTab === 'tax' && <TaxOptimizer locale={locale} />}
+          <div className={activeTab === 'sip' ? '' : 'hidden'}>
+            <SipCalculator locale={locale} />
+          </div>
+          <div className={activeTab === 'swp' ? '' : 'hidden'}>
+            <SwpCalculator locale={locale} />
+          </div>
+          <div className={activeTab === 'mortgage' ? '' : 'hidden'}>
+            <MortgageOverpayment locale={locale} />
+          </div>
+          <div className={activeTab === 'fire' ? '' : 'hidden'}>
+            <FireCalculator locale={locale} />
+          </div>
+          <div className={activeTab === 'tax' ? '' : 'hidden'}>
+            <TaxOptimizer locale={locale} />
+          </div>
         </div>
       </main>
 
