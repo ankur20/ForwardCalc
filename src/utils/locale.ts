@@ -273,7 +273,7 @@ export const localeConfigs: Record<LocaleType, LocaleConfig> = {
       swp: { title: 'Pension Drawdown', desc: 'Systematic drawing plans' },
       mortgage: { title: 'Mortgage Overpay', desc: 'Clear property debt early' },
       fire: { title: 'FIRE Target', desc: 'Retire early milestone' },
-      tax: { title: 'Tax Sacrifice', desc: 'Salary vs pension optimization' },
+      tax: { title: 'Salary Sacrifice', desc: 'Salary vs pension optimization' },
     },
     line: 'Line',
     bar: 'Bar',
