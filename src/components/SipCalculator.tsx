@@ -67,13 +67,21 @@ export const SipCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Monthly Investment</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(monthly)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-28 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={monthly === 0 ? '' : monthly} 
+                  onChange={(e) => setMonthly(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={10} 
               max={5000} 
-              step={10}
+              step={1}
               value={monthly}
               onChange={(e) => setMonthly(Number(e.target.value))}
             />
@@ -87,13 +95,22 @@ export const SipCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Expected Annual Return</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{rate}%</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={rate === 0 ? '' : rate} 
+                  onChange={(e) => setRate(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">%</span>
+              </div>
             </div>
             <input 
               type="range" 
               min={1} 
               max={30} 
-              step={0.5}
+              step={0.01}
               value={rate}
               onChange={(e) => setRate(Number(e.target.value))}
             />
@@ -107,7 +124,15 @@ export const SipCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Duration</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{years} Years</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  value={years === 0 ? '' : years} 
+                  onChange={(e) => setYears(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">Yrs</span>
+              </div>
             </div>
             <input 
               type="range" 

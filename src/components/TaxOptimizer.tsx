@@ -37,13 +37,21 @@ export const TaxOptimizer: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Annual Gross Salary</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(salary)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={salary === 0 ? '' : salary} 
+                  onChange={(e) => setSalary(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={15000} 
               max={250000} 
-              step={1000}
+              step={100}
               value={salary}
               onChange={(e) => setSalary(Number(e.target.value))}
             />
@@ -57,13 +65,22 @@ export const TaxOptimizer: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Salary Sacrifice Contribution</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{pensionPercent}%</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={pensionPercent === 0 ? '' : pensionPercent} 
+                  onChange={(e) => setPensionPercent(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">%</span>
+              </div>
             </div>
             <input 
               type="range" 
               min={0} 
               max={40} 
-              step={1}
+              step={0.01}
               value={pensionPercent}
               onChange={(e) => setPensionPercent(Number(e.target.value))}
             />

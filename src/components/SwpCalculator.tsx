@@ -64,13 +64,21 @@ export const SwpCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Starting Retirement Pot</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(pot)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={pot === 0 ? '' : pot} 
+                  onChange={(e) => setPot(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={10000} 
               max={2000000} 
-              step={10000}
+              step={1000}
               value={pot}
               onChange={(e) => setPot(Number(e.target.value))}
             />
@@ -84,13 +92,21 @@ export const SwpCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Monthly Withdrawal</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(withdrawal)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-28 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={withdrawal === 0 ? '' : withdrawal} 
+                  onChange={(e) => setWithdrawal(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={100} 
               max={15000} 
-              step={100}
+              step={10}
               value={withdrawal}
               onChange={(e) => setWithdrawal(Number(e.target.value))}
             />
@@ -104,13 +120,22 @@ export const SwpCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Annual Growth Rate</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{rate}%</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={rate === 0 ? '' : rate} 
+                  onChange={(e) => setRate(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">%</span>
+              </div>
             </div>
             <input 
               type="range" 
               min={1} 
               max={15} 
-              step={0.5}
+              step={0.01}
               value={rate}
               onChange={(e) => setRate(Number(e.target.value))}
             />
@@ -124,7 +149,15 @@ export const SwpCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Simulation Period</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{years} Years</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  value={years === 0 ? '' : years} 
+                  onChange={(e) => setYears(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">Yrs</span>
+              </div>
             </div>
             <input 
               type="range" 

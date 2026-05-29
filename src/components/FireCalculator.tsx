@@ -67,7 +67,15 @@ export const FireCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Current Age</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{age} Years Old</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  value={age === 0 ? '' : age} 
+                  onChange={(e) => setAge(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">Yrs</span>
+              </div>
             </div>
             <input 
               type="range" 
@@ -95,13 +103,21 @@ export const FireCalculator: React.FC = () => {
                   </span>
                 </span>
               </span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(expenses)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={expenses === 0 ? '' : expenses} 
+                  onChange={(e) => setExpenses(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={5000} 
               max={250000} 
-              step={5000}
+              step={100}
               value={expenses}
               onChange={(e) => setExpenses(Number(e.target.value))}
             />
@@ -115,13 +131,21 @@ export const FireCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Current Net Worth</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(netWorth)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={netWorth === 0 ? '' : netWorth} 
+                  onChange={(e) => setNetWorth(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={0} 
               max={1000000} 
-              step={10000}
+              step={1000}
               value={netWorth}
               onChange={(e) => setNetWorth(Number(e.target.value))}
             />
@@ -135,13 +159,21 @@ export const FireCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Monthly Savings</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(monthlySavings)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-28 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={monthlySavings === 0 ? '' : monthlySavings} 
+                  onChange={(e) => setMonthlySavings(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={0} 
               max={15000} 
-              step={100}
+              step={10}
               value={monthlySavings}
               onChange={(e) => setMonthlySavings(Number(e.target.value))}
             />
@@ -155,13 +187,22 @@ export const FireCalculator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Net Investment Return</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{rate}%</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={rate === 0 ? '' : rate} 
+                  onChange={(e) => setRate(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">%</span>
+              </div>
             </div>
             <input 
               type="range" 
               min={1} 
               max={15} 
-              step={0.5}
+              step={0.01}
               value={rate}
               onChange={(e) => setRate(Number(e.target.value))}
             />

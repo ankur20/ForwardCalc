@@ -65,13 +65,21 @@ export const MortgageOverpayment: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Mortgage Balance</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(balance)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={balance === 0 ? '' : balance} 
+                  onChange={(e) => setBalance(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={50000} 
               max={1500000} 
-              step={10000}
+              step={1000}
               value={balance}
               onChange={(e) => setBalance(Number(e.target.value))}
             />
@@ -85,13 +93,22 @@ export const MortgageOverpayment: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Mortgage Interest Rate</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{rate}%</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={rate === 0 ? '' : rate} 
+                  onChange={(e) => setRate(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">%</span>
+              </div>
             </div>
             <input 
               type="range" 
               min={1} 
               max={10} 
-              step={0.1}
+              step={0.01}
               value={rate}
               onChange={(e) => setRate(Number(e.target.value))}
             />
@@ -105,7 +122,15 @@ export const MortgageOverpayment: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Remaining Term</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{term} Years</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <input 
+                  type="number" 
+                  value={term === 0 ? '' : term} 
+                  onChange={(e) => setTerm(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <span className="text-xs font-bold text-[var(--theme-accent)]">Yrs</span>
+              </div>
             </div>
             <input 
               type="range" 
@@ -125,13 +150,21 @@ export const MortgageOverpayment: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">Monthly Overpayment</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(monthlyOverpay)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-28 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={monthlyOverpay === 0 ? '' : monthlyOverpay} 
+                  onChange={(e) => setMonthlyOverpay(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={0} 
               max={5000} 
-              step={50}
+              step={10}
               value={monthlyOverpay}
               onChange={(e) => setMonthlyOverpay(Number(e.target.value))}
             />
@@ -145,13 +178,21 @@ export const MortgageOverpayment: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-[var(--theme-text)]">One-off Lump Sum (Month 1)</span>
-              <span className="font-black text-base text-[var(--theme-heading)]">{formatCurrency(oneOffOverpay)}</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={oneOffOverpay === 0 ? '' : oneOffOverpay} 
+                  onChange={(e) => setOneOffOverpay(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
             </div>
             <input 
               type="range" 
               min={0} 
               max={100000} 
-              step={1000}
+              step={100}
               value={oneOffOverpay}
               onChange={(e) => setOneOffOverpay(Number(e.target.value))}
             />
