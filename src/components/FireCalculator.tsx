@@ -26,10 +26,31 @@ export const FireCalculator: React.FC = () => {
     }).format(val);
   };
 
+  // Compact currency formatting (e.g. £1.5M, £250k)
+  const formatCompact = (val: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      style: 'currency',
+      currency: 'GBP',
+      maximumFractionDigits: 1,
+    }).format(val);
+  };
+
+  const getXAxisTicks = (totalYears: number) => {
+    if (totalYears <= 5) return Array.from({ length: totalYears + 1 }, (_, i) => i);
+    if (totalYears <= 12) return Array.from({ length: Math.floor(totalYears / 2) + 1 }, (_, i) => i * 2);
+    if (totalYears <= 25) return Array.from({ length: Math.floor(totalYears / 5) + 1 }, (_, i) => i * 5);
+    return Array.from({ length: Math.floor(totalYears / 10) + 1 }, (_, i) => i * 10);
+  };
+
   // Chart properties
   const chartWidth = 500;
   const chartHeight = 220;
-  const padding = 35;
+  const paddingLeft = 50;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 35;
 
   // Generate SVG coordinates for net worth accumulation vs FIRE target flatline
   const points = useMemo(() => {
@@ -37,12 +58,14 @@ export const FireCalculator: React.FC = () => {
 
     // Max value is either target or the final compounded net worth (whichever is larger)
     const maxVal = Math.max(result.fireTarget, ...result.yearlyBalances.map(b => b.balance), 100);
-    const stepX = (chartWidth - padding * 2) / (result.yearlyBalances.length - 1 || 1);
+    const innerWidth = chartWidth - paddingLeft - paddingRight;
+    const innerHeight = chartHeight - paddingTop - paddingBottom;
+    const stepX = innerWidth / (result.yearlyBalances.length - 1 || 1);
 
     const coords = result.yearlyBalances.map((d, i) => {
-      const x = padding + i * stepX;
-      const y = chartHeight - padding - (d.balance / maxVal) * (chartHeight - padding * 2);
-      const yTarget = chartHeight - padding - (result.fireTarget / maxVal) * (chartHeight - padding * 2);
+      const x = paddingLeft + i * stepX;
+      const y = chartHeight - paddingBottom - (d.balance / maxVal) * innerHeight;
+      const yTarget = chartHeight - paddingBottom - (result.fireTarget / maxVal) * innerHeight;
       return { x, y, yTarget, data: d };
     });
 
@@ -51,7 +74,7 @@ export const FireCalculator: React.FC = () => {
     const targetLine = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.yTarget}`).join(' ');
 
     return { line, targetLine, coordinates: coords };
-  }, [result.yearlyBalances, result.fireTarget, chartWidth, chartHeight, padding]);
+  }, [result.yearlyBalances, result.fireTarget, chartWidth, chartHeight]);
 
 
 
@@ -287,9 +310,9 @@ export const FireCalculator: React.FC = () => {
               fill="none"
             >
               {/* Grid Lines */}
-              <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-              <line x1={padding} y1={chartHeight/2} x2={chartWidth - padding} y2={chartHeight/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-              <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--theme-border)" strokeWidth="1" />
+              <line x1={paddingLeft} y1={paddingTop} x2={chartWidth - paddingRight} y2={paddingTop} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
+              <line x1={paddingLeft} y1={chartHeight/2} x2={chartWidth - paddingRight} y2={chartHeight/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
+              <line x1={paddingLeft} y1={chartHeight - paddingBottom} x2={chartWidth - paddingRight} y2={chartHeight - paddingBottom} stroke="var(--theme-border)" strokeWidth="1" />
 
               {/* FIRE Target line */}
               <path d={points.targetLine} stroke="#f59e0b" strokeWidth="2" strokeDasharray="5 3" className="transition-all duration-500 z-10" />
@@ -298,15 +321,74 @@ export const FireCalculator: React.FC = () => {
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (
                 <line 
                   x1={points.coordinates[hoveredIdx].x} 
-                  y1={padding} 
+                  y1={paddingTop} 
                   x2={points.coordinates[hoveredIdx].x} 
-                  y2={chartHeight - padding} 
+                  y2={chartHeight - paddingBottom} 
                   stroke="var(--theme-accent)" 
                   strokeWidth="1" 
                   strokeDasharray="4 4"
                   className="opacity-50 pointer-events-none"
                 />
               )}
+
+              {/* Y Axis Ticks and Labels */}
+              {(() => {
+                const maxVal = Math.max(result.fireTarget, ...result.yearlyBalances.map(b => b.balance), 100);
+                return (
+                  <g className="select-none pointer-events-none">
+                    <line x1={paddingLeft - 4} y1={paddingTop} x2={paddingLeft} y2={paddingTop} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={paddingTop} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      {formatCompact(maxVal)}
+                    </text>
+
+                    <line x1={paddingLeft - 4} y1={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} x2={paddingLeft} y2={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      {formatCompact(maxVal / 2)}
+                    </text>
+
+                    <line x1={paddingLeft - 4} y1={chartHeight - paddingBottom} x2={paddingLeft} y2={chartHeight - paddingBottom} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={chartHeight - paddingBottom} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      £0
+                    </text>
+                  </g>
+                );
+              })()}
+
+              {/* X Axis Ticks and Labels */}
+              {(() => {
+                const tickYears = getXAxisTicks(result.yearlyBalances.length - 1);
+                return (
+                  <g className="select-none pointer-events-none">
+                    {tickYears.map((y) => {
+                      const idx = result.yearlyBalances.findIndex(d => d.year === y);
+                      if (idx === -1 || !points.coordinates[idx]) return null;
+                      const c = points.coordinates[idx];
+                      return (
+                        <g key={y}>
+                          <line 
+                            x1={c.x} 
+                            y1={chartHeight - paddingBottom} 
+                            x2={c.x} 
+                            y2={chartHeight - paddingBottom + 4} 
+                            stroke="var(--theme-border)" 
+                            strokeWidth="1" 
+                          />
+                          <text 
+                            x={c.x} 
+                            y={chartHeight - paddingBottom + 15} 
+                            fontSize="8" 
+                            textAnchor="middle" 
+                            fill="var(--theme-text)" 
+                            opacity="0.6"
+                          >
+                            Age {age + y}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })()}
 
               {/* Graph Type Selection Conditional Rendering */}
               {graphType === 'line' ? (
@@ -317,11 +399,11 @@ export const FireCalculator: React.FC = () => {
               ) : (
                 <g>
                   {points.coordinates.map((c, i) => {
-                    const stepX = points.coordinates.length > 1 ? (chartWidth - padding * 2) / (points.coordinates.length - 1) : chartWidth - padding * 2;
+                    const stepX = points.coordinates.length > 1 ? (chartWidth - paddingLeft - paddingRight) / (points.coordinates.length - 1) : chartWidth - paddingLeft - paddingRight;
                     const barWidth = Math.max(3, stepX * 0.7);
                     
                     const maxVal = Math.max(result.fireTarget, ...result.yearlyBalances.map(b => b.balance), 100);
-                    const balanceHeight = (c.data.balance / maxVal) * (chartHeight - padding * 2);
+                    const balanceHeight = (c.data.balance / maxVal) * (chartHeight - paddingTop - paddingBottom);
 
                     const isHovered = hoveredIdx === i;
                     const isAnyHovered = hoveredIdx !== null;
@@ -330,7 +412,7 @@ export const FireCalculator: React.FC = () => {
                       <rect
                         key={i}
                         x={c.x - barWidth / 2}
-                        y={chartHeight - padding - balanceHeight}
+                        y={chartHeight - paddingBottom - balanceHeight}
                         width={barWidth}
                         height={balanceHeight}
                         fill="url(#fireBarGrad)"
@@ -394,13 +476,6 @@ export const FireCalculator: React.FC = () => {
                 <div className="text-amber-600">FIRE Target: <span className="font-semibold">{formatCurrency(points.coordinates[hoveredIdx].data.target)}</span></div>
               </div>
             )}
-          </div>
-
-          {/* X Axis Labels */}
-          <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60 font-semibold px-4 pt-2">
-            <span>Age {age}</span>
-            <span>Age {age + 25}</span>
-            <span>Age {age + 50}</span>
           </div>
         </div>
 

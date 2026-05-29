@@ -22,10 +22,31 @@ export const SwpCalculator: React.FC = () => {
     }).format(val);
   };
 
+  // Compact currency formatting (e.g. £1.5M, £250k)
+  const formatCompact = (val: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      style: 'currency',
+      currency: 'GBP',
+      maximumFractionDigits: 1,
+    }).format(val);
+  };
+
+  const getXAxisTicks = (totalYears: number) => {
+    if (totalYears <= 5) return Array.from({ length: totalYears + 1 }, (_, i) => i);
+    if (totalYears <= 12) return Array.from({ length: Math.floor(totalYears / 2) + 1 }, (_, i) => i * 2);
+    if (totalYears <= 25) return Array.from({ length: Math.floor(totalYears / 5) + 1 }, (_, i) => i * 5);
+    return Array.from({ length: Math.floor(totalYears / 10) + 1 }, (_, i) => i * 10);
+  };
+
   // SVG Chart settings
   const chartWidth = 500;
   const chartHeight = 220;
-  const padding = 35;
+  const paddingLeft = 50;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 35;
 
   // Generate SVG coordinates for Balance curve
   const points = useMemo(() => {
@@ -33,19 +54,21 @@ export const SwpCalculator: React.FC = () => {
 
     // Max val can be pot or if the pot actually grows (highly possible if withdrawal is small!)
     const maxVal = Math.max(pot, ...result.yearlyData.map(d => d.balance), 100);
-    const stepX = (chartWidth - padding * 2) / (result.yearlyData.length - 1 || 1);
+    const innerWidth = chartWidth - paddingLeft - paddingRight;
+    const innerHeight = chartHeight - paddingTop - paddingBottom;
+    const stepX = innerWidth / (result.yearlyData.length - 1 || 1);
 
     const coords = result.yearlyData.map((d, i) => {
-      const x = padding + i * stepX;
-      const y = chartHeight - padding - (d.balance / maxVal) * (chartHeight - padding * 2);
+      const x = paddingLeft + i * stepX;
+      const y = chartHeight - paddingBottom - (d.balance / maxVal) * innerHeight;
       return { x, y, data: d };
     });
 
     const linePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ');
-    const areaPath = linePath + ` L ${coords[coords.length - 1].x} ${chartHeight - padding} L ${padding} ${chartHeight - padding} Z`;
+    const areaPath = linePath + ` L ${coords[coords.length - 1].x} ${chartHeight - paddingBottom} L ${paddingLeft} ${chartHeight - paddingBottom} Z`;
 
     return { line: linePath, area: areaPath, coordinates: coords };
-  }, [result.yearlyData, pot, chartWidth, chartHeight, padding]);
+  }, [result.yearlyData, pot, chartWidth, chartHeight]);
 
 
 
@@ -248,7 +271,6 @@ export const SwpCalculator: React.FC = () => {
               </div>
             </div>
           </div>
-
           <div className="relative w-full flex items-center justify-center">
             <svg 
               className="w-full h-auto max-h-[220px]" 
@@ -256,23 +278,82 @@ export const SwpCalculator: React.FC = () => {
               fill="none"
             >
               {/* Grid Lines */}
-              <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-              <line x1={padding} y1={chartHeight/2} x2={chartWidth - padding} y2={chartHeight/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-              <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--theme-border)" strokeWidth="1" />
+              <line x1={paddingLeft} y1={paddingTop} x2={chartWidth - paddingRight} y2={paddingTop} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
+              <line x1={paddingLeft} y1={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} x2={chartWidth - paddingRight} y2={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
+              <line x1={paddingLeft} y1={chartHeight - paddingBottom} x2={chartWidth - paddingRight} y2={chartHeight - paddingBottom} stroke="var(--theme-border)" strokeWidth="1" />
 
               {/* Hover Guide Line */}
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (
                 <line 
                   x1={points.coordinates[hoveredIdx].x} 
-                  y1={padding} 
+                  y1={paddingTop} 
                   x2={points.coordinates[hoveredIdx].x} 
-                  y2={chartHeight - padding} 
+                  y2={chartHeight - paddingBottom} 
                   stroke={result.isDepleted ? '#ef4444' : 'var(--theme-accent)'} 
                   strokeWidth="1" 
                   strokeDasharray="4 4"
                   className="opacity-50 pointer-events-none"
                 />
               )}
+
+              {/* Y Axis Ticks and Labels */}
+              {(() => {
+                const maxVal = Math.max(pot, ...result.yearlyData.map(d => d.balance), 100);
+                return (
+                  <g className="select-none pointer-events-none">
+                    <line x1={paddingLeft - 4} y1={paddingTop} x2={paddingLeft} y2={paddingTop} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={paddingTop} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      {formatCompact(maxVal)}
+                    </text>
+
+                    <line x1={paddingLeft - 4} y1={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} x2={paddingLeft} y2={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      {formatCompact(maxVal / 2)}
+                    </text>
+
+                    <line x1={paddingLeft - 4} y1={chartHeight - paddingBottom} x2={paddingLeft} y2={chartHeight - paddingBottom} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={chartHeight - paddingBottom} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      £0
+                    </text>
+                  </g>
+                );
+              })()}
+
+              {/* X Axis Ticks and Labels */}
+              {(() => {
+                const tickYears = getXAxisTicks(years);
+                return (
+                  <g className="select-none pointer-events-none">
+                    {tickYears.map((y) => {
+                      const idx = result.yearlyData.findIndex(d => d.year === y);
+                      if (idx === -1 || !points.coordinates[idx]) return null;
+                      const c = points.coordinates[idx];
+                      return (
+                        <g key={y}>
+                          <line 
+                            x1={c.x} 
+                            y1={chartHeight - paddingBottom} 
+                            x2={c.x} 
+                            y2={chartHeight - paddingBottom + 4} 
+                            stroke="var(--theme-border)" 
+                            strokeWidth="1" 
+                          />
+                          <text 
+                            x={c.x} 
+                            y={chartHeight - paddingBottom + 15} 
+                            fontSize="8" 
+                            textAnchor="middle" 
+                            fill="var(--theme-text)" 
+                            opacity="0.6"
+                          >
+                            {y === 0 ? 'Start' : `Yr ${y}`}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })()}
 
               {/* Graph Type Selection Conditional Rendering */}
               {graphType === 'line' ? (
@@ -292,11 +373,11 @@ export const SwpCalculator: React.FC = () => {
               ) : (
                 <g>
                   {points.coordinates.map((c, i) => {
-                    const stepX = points.coordinates.length > 1 ? (chartWidth - padding * 2) / (points.coordinates.length - 1) : chartWidth - padding * 2;
+                    const stepX = points.coordinates.length > 1 ? (chartWidth - paddingLeft - paddingRight) / (points.coordinates.length - 1) : chartWidth - paddingLeft - paddingRight;
                     const barWidth = Math.max(3, stepX * 0.7);
                     
                     const maxVal = Math.max(pot, ...result.yearlyData.map(d => d.balance), 100);
-                    const balanceHeight = (c.data.balance / maxVal) * (chartHeight - padding * 2);
+                    const balanceHeight = (c.data.balance / maxVal) * (chartHeight - paddingTop - paddingBottom);
 
                     const isHovered = hoveredIdx === i;
                     const isAnyHovered = hoveredIdx !== null;
@@ -305,7 +386,7 @@ export const SwpCalculator: React.FC = () => {
                       <rect
                         key={i}
                         x={c.x - barWidth / 2}
-                        y={chartHeight - padding - balanceHeight}
+                        y={chartHeight - paddingBottom - balanceHeight}
                         width={barWidth}
                         height={balanceHeight}
                         fill={result.isDepleted && c.data.balance === 0 ? "rgba(239, 68, 68, 0.1)" : (result.isDepleted ? "url(#swpBarDepletedGrad)" : "url(#swpBarGrad)")}
@@ -381,17 +462,8 @@ export const SwpCalculator: React.FC = () => {
               </div>
             )}
           </div>
-
-          {/* X Axis Labels */}
-          <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60 font-semibold px-4 pt-2">
-            <span>Pot Start</span>
-            <span>Year {Math.round(years / 2)}</span>
-            <span>Year {years}</span>
-          </div>
         </div>
-
       </div>
-
     </div>
   );
 };

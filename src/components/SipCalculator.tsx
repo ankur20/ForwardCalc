@@ -22,37 +22,60 @@ export const SipCalculator: React.FC = () => {
     }).format(val);
   };
 
+  // Compact currency formatting (e.g. £1.5M, £250k)
+  const formatCompact = (val: number) => {
+    return new Intl.NumberFormat('en-GB', {
+      notation: 'compact',
+      compactDisplay: 'short',
+      style: 'currency',
+      currency: 'GBP',
+      maximumFractionDigits: 1,
+    }).format(val);
+  };
+
+  const getXAxisTicks = (totalYears: number) => {
+    if (totalYears <= 5) return Array.from({ length: totalYears + 1 }, (_, i) => i);
+    if (totalYears <= 12) return Array.from({ length: Math.floor(totalYears / 2) + 1 }, (_, i) => i * 2);
+    if (totalYears <= 25) return Array.from({ length: Math.floor(totalYears / 5) + 1 }, (_, i) => i * 5);
+    return Array.from({ length: Math.floor(totalYears / 10) + 1 }, (_, i) => i * 10);
+  };
+
   // SVG Chart Dimensions
   const chartWidth = 500;
   const chartHeight = 220;
-  const padding = 35;
+  const paddingLeft = 50;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 35;
 
   // Generate coordinates for SVG Path
   const points = useMemo(() => {
     if (result.yearlyData.length === 0) return { invested: '', total: '', coordinates: [] };
 
     const maxVal = Math.max(...result.yearlyData.map(d => d.totalValue), 100);
-    const stepX = (chartWidth - padding * 2) / (result.yearlyData.length - 1 || 1);
+    const innerWidth = chartWidth - paddingLeft - paddingRight;
+    const innerHeight = chartHeight - paddingTop - paddingBottom;
+    const stepX = innerWidth / (result.yearlyData.length - 1 || 1);
     
     const coords = result.yearlyData.map((d, i) => {
-      const x = padding + i * stepX;
+      const x = paddingLeft + i * stepX;
       // SVG origin is top-left, so we subtract from height
-      const yInvested = chartHeight - padding - (d.invested / maxVal) * (chartHeight - padding * 2);
-      const yTotal = chartHeight - padding - (d.totalValue / maxVal) * (chartHeight - padding * 2);
+      const yInvested = chartHeight - paddingBottom - (d.invested / maxVal) * innerHeight;
+      const yTotal = chartHeight - paddingBottom - (d.totalValue / maxVal) * innerHeight;
       return { x, yInvested, yTotal, data: d };
     });
 
     // Create path strings
     const investedPath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.yInvested}`).join(' ') + 
-      ` L ${coords[coords.length - 1].x} ${chartHeight - padding} L ${padding} ${chartHeight - padding} Z`;
+      ` L ${coords[coords.length - 1].x} ${chartHeight - paddingBottom} L ${paddingLeft} ${chartHeight - paddingBottom} Z`;
 
     const totalPath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.yTotal}`).join(' ') + 
-      ` L ${coords[coords.length - 1].x} ${chartHeight - padding} L ${padding} ${chartHeight - padding} Z`;
+      ` L ${coords[coords.length - 1].x} ${chartHeight - paddingBottom} L ${paddingLeft} ${chartHeight - paddingBottom} Z`;
 
     const totalLinePath = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.yTotal}`).join(' ');
 
     return { invested: investedPath, total: totalPath, line: totalLinePath, coordinates: coords };
-  }, [result.yearlyData, chartWidth, chartHeight, padding]);
+  }, [result.yearlyData, chartWidth, chartHeight]);
 
 
 
@@ -252,23 +275,82 @@ export const SipCalculator: React.FC = () => {
               fill="none"
             >
               {/* Grid Lines */}
-              <line x1={padding} y1={padding} x2={chartWidth - padding} y2={padding} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-              <line x1={padding} y1={chartHeight/2} x2={chartWidth - padding} y2={chartHeight/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
-              <line x1={padding} y1={chartHeight - padding} x2={chartWidth - padding} y2={chartHeight - padding} stroke="var(--theme-border)" strokeWidth="1" />
+              <line x1={paddingLeft} y1={paddingTop} x2={chartWidth - paddingRight} y2={paddingTop} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
+              <line x1={paddingLeft} y1={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} x2={chartWidth - paddingRight} y2={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} stroke="var(--theme-border)" strokeWidth="0.5" strokeDasharray="3 3" />
+              <line x1={paddingLeft} y1={chartHeight - paddingBottom} x2={chartWidth - paddingRight} y2={chartHeight - paddingBottom} stroke="var(--theme-border)" strokeWidth="1" />
 
               {/* Hover Guide Line */}
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (
                 <line 
                   x1={points.coordinates[hoveredIdx].x} 
-                  y1={padding} 
+                  y1={paddingTop} 
                   x2={points.coordinates[hoveredIdx].x} 
-                  y2={chartHeight - padding} 
+                  y2={chartHeight - paddingBottom} 
                   stroke="var(--theme-accent)" 
                   strokeWidth="1" 
                   strokeDasharray="4 4"
                   className="opacity-50 pointer-events-none"
                 />
               )}
+
+              {/* Y Axis Ticks and Labels */}
+              {(() => {
+                const maxVal = Math.max(...result.yearlyData.map(d => d.totalValue), 100);
+                return (
+                  <g className="select-none pointer-events-none">
+                    <line x1={paddingLeft - 4} y1={paddingTop} x2={paddingLeft} y2={paddingTop} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={paddingTop} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      {formatCompact(maxVal)}
+                    </text>
+
+                    <line x1={paddingLeft - 4} y1={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} x2={paddingLeft} y2={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      {formatCompact(maxVal / 2)}
+                    </text>
+
+                    <line x1={paddingLeft - 4} y1={chartHeight - paddingBottom} x2={paddingLeft} y2={chartHeight - paddingBottom} stroke="var(--theme-border)" strokeWidth="1" />
+                    <text x={paddingLeft - 8} y={chartHeight - paddingBottom} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
+                      £0
+                    </text>
+                  </g>
+                );
+              })()}
+
+              {/* X Axis Ticks and Labels */}
+              {(() => {
+                const tickYears = getXAxisTicks(years);
+                return (
+                  <g className="select-none pointer-events-none">
+                    {tickYears.map((y) => {
+                      const idx = result.yearlyData.findIndex(d => d.year === y);
+                      if (idx === -1 || !points.coordinates[idx]) return null;
+                      const c = points.coordinates[idx];
+                      return (
+                        <g key={y}>
+                          <line 
+                            x1={c.x} 
+                            y1={chartHeight - paddingBottom} 
+                            x2={c.x} 
+                            y2={chartHeight - paddingBottom + 4} 
+                            stroke="var(--theme-border)" 
+                            strokeWidth="1" 
+                          />
+                          <text 
+                            x={c.x} 
+                            y={chartHeight - paddingBottom + 15} 
+                            fontSize="8" 
+                            textAnchor="middle" 
+                            fill="var(--theme-text)" 
+                            opacity="0.6"
+                          >
+                            {y === 0 ? 'Start' : `Yr ${y}`}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })()}
 
               {/* Graph Type Selection Conditional Rendering */}
               {graphType === 'line' ? (
@@ -283,12 +365,12 @@ export const SipCalculator: React.FC = () => {
               ) : (
                 <g>
                   {points.coordinates.map((c, i) => {
-                    const stepX = points.coordinates.length > 1 ? (chartWidth - padding * 2) / (points.coordinates.length - 1) : chartWidth - padding * 2;
+                    const stepX = points.coordinates.length > 1 ? (chartWidth - paddingLeft - paddingRight) / (points.coordinates.length - 1) : chartWidth - paddingLeft - paddingRight;
                     const barWidth = Math.max(3, stepX * 0.7);
                     
                     const maxVal = Math.max(...result.yearlyData.map(d => d.totalValue), 100);
-                    const totalHeight = (c.data.totalValue / maxVal) * (chartHeight - padding * 2);
-                    const investedHeight = (c.data.invested / maxVal) * (chartHeight - padding * 2);
+                    const totalHeight = (c.data.totalValue / maxVal) * (chartHeight - paddingTop - paddingBottom);
+                    const investedHeight = (c.data.invested / maxVal) * (chartHeight - paddingTop - paddingBottom);
                     const growthHeight = Math.max(0, totalHeight - investedHeight);
 
                     const isHovered = hoveredIdx === i;
@@ -303,7 +385,7 @@ export const SipCalculator: React.FC = () => {
                         {/* Invested portion rect */}
                         <rect
                           x={c.x - barWidth / 2}
-                          y={chartHeight - padding - investedHeight}
+                          y={chartHeight - paddingBottom - investedHeight}
                           width={barWidth}
                           height={investedHeight}
                           fill="url(#barInvestedGrad)"
@@ -313,7 +395,7 @@ export const SipCalculator: React.FC = () => {
                         {/* Growth portion rect */}
                         <rect
                           x={c.x - barWidth / 2}
-                          y={chartHeight - padding - totalHeight}
+                          y={chartHeight - paddingBottom - totalHeight}
                           width={barWidth}
                           height={growthHeight}
                           fill="url(#barGrowthGrad)"
@@ -392,13 +474,6 @@ export const SipCalculator: React.FC = () => {
                 <div className="text-[var(--theme-accent)]">Total Value: <span className="font-bold">{formatCurrency(points.coordinates[hoveredIdx].data.totalValue)}</span></div>
               </div>
             )}
-          </div>
-
-          {/* X Axis Labels */}
-          <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60 font-semibold px-4 pt-2">
-            <span>Start</span>
-            <span>Year {Math.round(years / 2)}</span>
-            <span>Year {years}</span>
           </div>
         </div>
 
