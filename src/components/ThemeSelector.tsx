@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sun, Moon, Heart, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sun, Moon, Heart, Sparkles, Settings, X } from 'lucide-react';
 import type { LocaleType } from '../utils/locale';
 import { localeConfigs } from '../utils/locale';
 
@@ -13,6 +13,8 @@ interface ThemeSelectorProps {
 }
 
 export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme, locale, setLocale }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
   const themes: { id: ThemeType; name: string; icon: React.ReactNode; activeColor: string }[] = [
     {
       id: 'light',
@@ -86,65 +88,105 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme, l
     }
   };
 
+  const renderLocaleButtons = (isMobile = false) => {
+    return (Object.keys(localeConfigs) as LocaleType[]).map((loc) => {
+      const config = localeConfigs[loc];
+      return (
+        <button
+          key={loc}
+          onClick={() => setLocale(loc)}
+          className={`flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
+            locale === loc
+              ? 'bg-[var(--theme-accent-light)] text-[var(--theme-accent)] border-[var(--theme-accent)]/20 shadow-sm font-bold scale-[1.02]'
+              : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
+          } ${isMobile ? 'flex-1 justify-center' : ''}`}
+          title={config.name}
+        >
+          <span className="text-sm">{config.flag}</span>
+          <span className="uppercase text-xs tracking-tight">{loc}</span>
+        </button>
+      );
+    });
+  };
+
+  const renderThemeButtons = (isMobile = false) => {
+    return themes.map((t) => (
+      <button
+        key={t.id}
+        onClick={(e) => handleThemeChange(t.id, e)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
+          theme === t.id
+            ? t.activeColor
+            : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
+        } ${isMobile ? 'flex-1 justify-center' : ''}`}
+      >
+        {t.icon}
+        <span className="hidden sm:inline">{t.name}</span>
+      </button>
+    ));
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row justify-between items-center w-full max-w-7xl mx-auto py-6 px-4 md:px-8 border-b border-[var(--theme-border)] select-none gap-4">
-      {/* Brand Header Logo */}
-      <div className="flex items-center gap-2 mb-2 lg:mb-0">
-        <div className="p-2 rounded-xl bg-[var(--theme-accent-light)] text-[var(--theme-accent)] transition-colors duration-300">
-          <Sparkles className="w-5 h-5 animate-pulse" />
+    <div className="w-full max-w-7xl mx-auto py-4 px-4 md:px-8 border-b border-[var(--theme-border)] select-none">
+      <div className="flex justify-between items-center w-full">
+        {/* Brand Header Logo */}
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-[var(--theme-accent-light)] text-[var(--theme-accent)] transition-colors duration-300">
+            <Sparkles className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--theme-heading)] font-display m-0 leading-none">
+              Growth<span className="text-[var(--theme-accent)] transition-colors duration-300">Calc</span>
+            </h1>
+            <p className="text-xs uppercase font-bold tracking-wider text-[var(--theme-text)] opacity-70">
+              Interactive Growth Simulators
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--theme-heading)] font-display m-0 leading-none">
-            Growth<span className="text-[var(--theme-accent)] transition-colors duration-300">Calc</span>
-          </h1>
-          <p className="text-xs uppercase font-bold tracking-wider text-[var(--theme-text)] opacity-70">
-            Interactive Growth Simulators
-          </p>
+
+        {/* Mobile Settings Button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="lg:hidden p-2.5 rounded-xl bg-[var(--theme-panel)] border border-[var(--theme-border)] text-[var(--theme-text)] hover:text-[var(--theme-heading)] cursor-pointer transition-all duration-300 shadow-sm flex items-center justify-center"
+          aria-label="Toggle settings"
+        >
+          {isOpen ? <X className="w-5 h-5" /> : <Settings className="w-5 h-5" />}
+        </button>
+
+        {/* Desktop Selectors (hidden on mobile) */}
+        <div className="hidden lg:flex items-center gap-3">
+          {/* Geography / Locale Selector */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
+            {renderLocaleButtons()}
+          </div>
+
+          {/* Theme Options */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
+            {renderThemeButtons()}
+          </div>
         </div>
       </div>
 
-      {/* Selectors Container */}
-      <div className="flex flex-col sm:flex-row items-center gap-3">
-        {/* Geography / Locale Selector */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
-          {(Object.keys(localeConfigs) as LocaleType[]).map((loc) => {
-            const config = localeConfigs[loc];
-            return (
-              <button
-                key={loc}
-                onClick={() => setLocale(loc)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
-                  locale === loc
-                    ? 'bg-[var(--theme-accent-light)] text-[var(--theme-accent)] border-[var(--theme-accent)]/20 shadow-sm font-bold scale-[1.02]'
-                    : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
-                }`}
-                title={config.name}
-              >
-                <span className="text-sm">{config.flag}</span>
-                <span className="uppercase text-xs tracking-tight">{loc}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Mobile Settings Dropdown */}
+      {isOpen && (
+        <div className="lg:hidden mt-4 pt-4 border-t border-[var(--theme-border)] flex flex-col gap-4 animate-fade-in">
+          {/* Mobile Region Selector */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase font-black tracking-widest text-[var(--theme-text)] opacity-50 px-1">Region</span>
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm w-full overflow-x-auto">
+              {renderLocaleButtons(true)}
+            </div>
+          </div>
 
-        {/* Theme Options */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
-          {themes.map((t) => (
-            <button
-              key={t.id}
-              onClick={(e) => handleThemeChange(t.id, e)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
-                theme === t.id
-                  ? t.activeColor
-                  : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
-              }`}
-            >
-              {t.icon}
-              <span className="hidden sm:inline">{t.name}</span>
-            </button>
-          ))}
+          {/* Mobile Theme Selector */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase font-black tracking-widest text-[var(--theme-text)] opacity-50 px-1">Theme</span>
+            <div className="flex items-center gap-1 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm w-full">
+              {renderThemeButtons(true)}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
