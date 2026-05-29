@@ -1,23 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { Award, ShieldAlert, Sparkles, TrendingUp } from 'lucide-react';
 import { calculateUkTax } from '../utils/calc';
+import type { LocaleType } from '../utils/locale';
+import { localeConfigs, formatCurrency } from '../utils/locale';
 
-export const TaxOptimizer: React.FC = () => {
+interface TaxOptimizerProps {
+  locale: LocaleType;
+}
+
+export const TaxOptimizer: React.FC<TaxOptimizerProps> = ({ locale }) => {
   const [salary, setSalary] = useState<number>(65000);
   const [pensionPercent, setPensionPercent] = useState<number>(8);
 
   const result = useMemo(() => calculateUkTax(salary, pensionPercent), [salary, pensionPercent]);
 
-  // Format currency
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
+  const t = localeConfigs[locale];
 
-  // Check if they are in the "60% tax trap" (£100k - £125,140)
+  // Check if they are in the "60% tax trap" (£100k - £125,140 equivalent)
   const isInSixtyPercentTrap = salary > 100000 && salary < 125140;
   // Check if sacrifice helps them escape it
   const escapesSixtyPercentTrap = isInSixtyPercentTrap && result.taxableSalary <= 100000;
@@ -30,15 +29,15 @@ export const TaxOptimizer: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-5 h-5 text-[var(--theme-accent)]" />
-            <h2 className="text-xl font-bold text-[var(--theme-heading)] font-display">Tax Optimizer</h2>
+            <h2 className="text-xl font-bold text-[var(--theme-heading)]">{t.taxCalc.title}</h2>
           </div>
 
           {/* Salary Slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold text-[var(--theme-text)]">Annual Gross Salary</span>
+              <span className="font-semibold text-[var(--theme-text)]">{t.taxCalc.salaryLabel}</span>
               <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
-                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <span className="text-xs font-bold text-[var(--theme-accent)]">{t.currencySymbol}</span>
                 <input 
                   type="number" 
                   value={salary === 0 ? '' : salary} 
@@ -56,15 +55,15 @@ export const TaxOptimizer: React.FC = () => {
               onChange={(e) => setSalary(Number(e.target.value))}
             />
             <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60">
-              <span>£15k</span>
-              <span>£250k</span>
+              <span>{t.taxCalc.salaryMinMax.split(' - ')[0]}</span>
+              <span>{t.taxCalc.salaryMinMax.split(' - ')[1]}</span>
             </div>
           </div>
 
           {/* Pension Sacrifice Slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold text-[var(--theme-text)]">Salary Sacrifice Contribution</span>
+              <span className="font-semibold text-[var(--theme-text)]">{t.taxCalc.currentPensionLabel}</span>
               <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
                 <input 
                   type="number" 
@@ -85,8 +84,8 @@ export const TaxOptimizer: React.FC = () => {
               onChange={(e) => setPensionPercent(Number(e.target.value))}
             />
             <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60">
-              <span>0% (Opt Out)</span>
-              <span>40%</span>
+              <span>{t.taxCalc.currentPensionMinMax.split(' - ')[0]}</span>
+              <span>{t.taxCalc.currentPensionMinMax.split(' - ')[1]}</span>
             </div>
           </div>
 
@@ -101,14 +100,14 @@ export const TaxOptimizer: React.FC = () => {
                 <>
                   <Sparkles className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                   <p>
-                    🎉 <strong>Amazing!</strong> By sacrificing {pensionPercent}%, you've brought your taxable income below £100,000, escaping the <strong>60% tax trap</strong> and restoring your full Personal Allowance!
+                    🎉 <strong>Amazing!</strong> By sacrificing {pensionPercent}%, you've brought your taxable income below {formatCurrency(100000, locale)}, escaping the <strong>60% tax trap</strong> and restoring your full Personal Allowance!
                   </p>
                 </>
               ) : (
                 <>
                   <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0" />
                   <p>
-                    ⚠️ <strong>60% Tax Trap:</strong> Between £100k and £125k, your Personal Allowance tapers, creating a 60% effective tax rate. Consider sacrificing to bring your taxable salary under £100k!
+                    ⚠️ <strong>60% Tax Trap:</strong> Between {formatCurrency(100000, locale)} and {formatCurrency(125140, locale)}, your Personal Allowance tapers, creating a 60% effective tax rate. Consider sacrificing to bring your taxable salary under {formatCurrency(100000, locale)}!
                   </p>
                 </>
               )}
@@ -117,8 +116,8 @@ export const TaxOptimizer: React.FC = () => {
         </div>
 
         {/* Informational Blurb */}
-        <div className="pt-4 border-t border-[var(--theme-border)] text-xs text-[var(--theme-text)] opacity-70 leading-relaxed font-light font-display">
-          💡 **Salary Sacrifice** bypasses both **Income Tax** and **National Insurance**, making it the most tax-efficient way to build retirement wealth in the UK.
+        <div className="pt-4 border-t border-[var(--theme-border)] text-xs text-[var(--theme-text)] opacity-70 leading-relaxed font-light">
+          💡 {t.taxCalc.infoBox}
         </div>
       </div>
 
@@ -130,10 +129,10 @@ export const TaxOptimizer: React.FC = () => {
           <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-4 rounded-2xl shadow-sm text-center">
             <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--theme-text)] opacity-70 mb-1 flex items-center justify-center gap-1">
               <Award className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Pension Value</span>
+              <span>{t.taxCalc.cardTotalPension}</span>
             </div>
             <div className="text-sm sm:text-lg lg:text-xl font-black text-emerald-500">
-              {formatCurrency(result.pensionGain)}
+              {formatCurrency(result.pensionGain, locale)}
             </div>
           </div>
 
@@ -153,10 +152,10 @@ export const TaxOptimizer: React.FC = () => {
           <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-4 rounded-2xl shadow-sm text-center">
             <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--theme-text)] opacity-70 mb-1 flex items-center justify-center gap-1">
               <TrendingUp className="w-3.5 h-3.5 text-[var(--theme-accent)]" />
-              <span>Tax/NI Saved</span>
+              <span>{t.taxCalc.cardTaxSaved}</span>
             </div>
             <div className="text-sm sm:text-lg lg:text-xl font-black text-[var(--theme-accent)]">
-              {formatCurrency(result.taxSaving + result.niSaving)}
+              {formatCurrency(result.taxSaving + result.niSaving, locale)}
             </div>
           </div>
         </div>
@@ -164,7 +163,7 @@ export const TaxOptimizer: React.FC = () => {
         {/* Visual Comparison Card */}
         <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-3xl p-6 flex-1 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-300">
           <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)] mb-6">
-            Net Take-Home vs Pension Allocation
+            {t.taxCalc.cardNetTakeHome} vs {t.taxCalc.cardTotalPension}
           </h3>
 
           <div className="space-y-8 flex-1 flex flex-col justify-center">
@@ -172,8 +171,8 @@ export const TaxOptimizer: React.FC = () => {
             {/* Original Path */}
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-bold text-[var(--theme-text)]">
-                <span>Original Strategy (0% Sacrifice)</span>
-                <span>Net Take-Home: {formatCurrency(result.originalTakeHome)}</span>
+                <span>{t.taxCalc.headingBefore} (0% Sacrifice)</span>
+                <span>{t.taxCalc.labelNet}: {formatCurrency(result.originalTakeHome, locale)}</span>
               </div>
               <div className="h-6 w-full rounded-xl bg-stone-200 overflow-hidden flex shadow-inner">
                 {/* Take home bar */}
@@ -181,14 +180,14 @@ export const TaxOptimizer: React.FC = () => {
                   className="bg-emerald-500 h-full flex items-center justify-center text-[10px] text-white font-bold transition-all duration-500" 
                   style={{ width: `${(result.originalTakeHome / salary) * 100}%` }}
                 >
-                  Take-Home
+                  {t.taxCalc.labelNet}
                 </div>
                 {/* Tax / NI bar */}
                 <div 
                   className="bg-rose-500/90 h-full flex items-center justify-center text-[10px] text-white font-bold transition-all duration-500" 
                   style={{ width: `${((result.originalTax + result.originalNi) / salary) * 100}%` }}
                 >
-                  Tax & NI
+                  {t.taxCalc.labelTax} & {t.taxCalc.labelNI}
                 </div>
               </div>
             </div>
@@ -196,8 +195,8 @@ export const TaxOptimizer: React.FC = () => {
             {/* Optimized Path */}
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-bold text-[var(--theme-text)]">
-                <span>Optimized Strategy ({pensionPercent}% Sacrifice)</span>
-                <span className="text-[var(--theme-accent)]">Net Take-Home: {formatCurrency(result.newTakeHome)}</span>
+                <span>{t.taxCalc.headingAfter} ({pensionPercent}% Sacrifice)</span>
+                <span className="text-[var(--theme-accent)]">{t.taxCalc.labelNet}: {formatCurrency(result.newTakeHome, locale)}</span>
               </div>
               <div className="h-6 w-full rounded-xl bg-stone-200 overflow-hidden flex shadow-inner">
                 {/* Take home bar */}
@@ -205,21 +204,21 @@ export const TaxOptimizer: React.FC = () => {
                   className="bg-emerald-500 h-full flex items-center justify-center text-[10px] text-white font-bold transition-all duration-500" 
                   style={{ width: `${(result.newTakeHome / salary) * 100}%` }}
                 >
-                  Take-Home
+                  {t.taxCalc.labelNet}
                 </div>
                 {/* Pension Contribution bar */}
                 <div 
                   className="bg-amber-500 h-full flex items-center justify-center text-[10px] text-white font-bold transition-all duration-500 animate-pulse" 
                   style={{ width: `${(result.pensionGain / salary) * 100}%` }}
                 >
-                  Pension Pot
+                  {t.taxCalc.labelPension}
                 </div>
                 {/* Tax / NI bar */}
                 <div 
                   className="bg-rose-500/90 h-full flex items-center justify-center text-[10px] text-white font-bold transition-all duration-500" 
                   style={{ width: `${((result.newTax + result.newNi) / salary) * 100}%` }}
                 >
-                  Tax & NI
+                  {t.taxCalc.labelTax} & {t.taxCalc.labelNI}
                 </div>
               </div>
             </div>
@@ -228,7 +227,7 @@ export const TaxOptimizer: React.FC = () => {
 
           {/* Explanatory summary bottom row */}
           <div className="pt-6 border-t border-[var(--theme-border)] text-xs text-[var(--theme-text)] leading-relaxed font-light">
-            👉 Putting <strong>{formatCurrency(result.pensionGain)}</strong> into your pension only reduced your take-home pay by <strong>{formatCurrency(result.takeHomeReduction)}</strong>. The government paid the remaining <strong>{formatCurrency(result.taxSaving + result.niSaving)}</strong> of your contribution!
+            👉 {t.taxCalc.summaryText.replace('{opt}', String(pensionPercent)).replace('{saved}', formatCurrency(result.taxSaving + result.niSaving, locale))}
           </div>
         </div>
 

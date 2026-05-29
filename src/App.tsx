@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ThemeSelector } from './components/ThemeSelector';
 import type { ThemeType } from './components/ThemeSelector';
+import type { LocaleType } from './utils/locale';
+import { localeConfigs } from './utils/locale';
 import { SipCalculator } from './components/SipCalculator';
 import { SwpCalculator } from './components/SwpCalculator';
 import { MortgageOverpayment } from './components/MortgageOverpayment';
@@ -19,8 +21,17 @@ const getInitialTheme = (): ThemeType => {
   return isDark ? 'dark' : 'light';
 };
 
+const getInitialLocale = (): LocaleType => {
+  const saved = localStorage.getItem('locale') as LocaleType;
+  if (saved && ['in', 'uk', 'us', 'fr', 'de', 'ar'].includes(saved)) {
+    return saved;
+  }
+  return 'uk';
+};
+
 function App() {
   const [theme, setTheme] = useState<ThemeType>(getInitialTheme);
+  const [locale, setLocale] = useState<LocaleType>(getInitialLocale);
   const [activeTab, setActiveTab] = useState<TabType>('sip');
 
   // Sync theme preference to localStorage
@@ -28,45 +39,52 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Sync locale preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('locale', locale);
+  }, [locale]);
+
+  const config = localeConfigs[locale];
+
   const tabs: { id: TabType; name: string; icon: React.ReactNode; desc: string }[] = [
     {
       id: 'sip',
-      name: 'SIP Growth',
+      name: config.tabs.sip.title,
       icon: <TrendingUp className="w-4 h-4" />,
-      desc: 'Compound regular savings'
+      desc: config.tabs.sip.desc
     },
     {
       id: 'swp',
-      name: 'Retirement SWP',
+      name: config.tabs.swp.title,
       icon: <Landmark className="w-4 h-4" />,
-      desc: 'Systematic drawing plans'
+      desc: config.tabs.swp.desc
     },
     {
       id: 'mortgage',
-      name: 'Mortgage Overpay',
+      name: config.tabs.mortgage.title,
       icon: <Home className="w-4 h-4" />,
-      desc: 'Clear property debt early'
+      desc: config.tabs.mortgage.desc
     },
     {
       id: 'fire',
-      name: 'FIRE Target',
+      name: config.tabs.fire.title,
       icon: <Target className="w-4 h-4" />,
-      desc: 'Retire early milestone'
+      desc: config.tabs.fire.desc
     },
     {
       id: 'tax',
-      name: 'UK Tax Sacrifice',
+      name: config.tabs.tax.title,
       icon: <TaxIcon className="w-4 h-4" />,
-      desc: 'Salary vs pension optimization'
+      desc: config.tabs.tax.desc
     }
   ];
 
   return (
-    <div className={`theme-${theme} min-h-screen transition-colors duration-500 bg-[var(--theme-bg)] flex flex-col justify-between`}>
+    <div className={`theme-${theme} min-h-screen transition-colors duration-500 bg-[var(--theme-bg)] flex flex-col justify-between`} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       
       {/* Top Banner and Theme Selector */}
       <header className="relative z-10 w-full">
-        <ThemeSelector theme={theme} setTheme={setTheme} />
+        <ThemeSelector theme={theme} setTheme={setTheme} locale={locale} setLocale={setLocale} />
       </header>
 
       {/* Main Container */}
@@ -101,11 +119,11 @@ function App() {
 
         {/* Active Panel View */}
         <div className="w-full transition-all duration-500">
-          {activeTab === 'sip' && <SipCalculator />}
-          {activeTab === 'swp' && <SwpCalculator />}
-          {activeTab === 'mortgage' && <MortgageOverpayment />}
-          {activeTab === 'fire' && <FireCalculator />}
-          {activeTab === 'tax' && <TaxOptimizer />}
+          {activeTab === 'sip' && <SipCalculator locale={locale} />}
+          {activeTab === 'swp' && <SwpCalculator locale={locale} />}
+          {activeTab === 'mortgage' && <MortgageOverpayment locale={locale} />}
+          {activeTab === 'fire' && <FireCalculator locale={locale} />}
+          {activeTab === 'tax' && <TaxOptimizer locale={locale} />}
         </div>
       </main>
 

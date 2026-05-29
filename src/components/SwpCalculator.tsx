@@ -1,8 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { Landmark, ArrowUpRight, Flame, Hourglass } from 'lucide-react';
 import { calculateSwp } from '../utils/calc';
+import type { LocaleType } from '../utils/locale';
+import { localeConfigs, formatCurrency, formatCompact, getXAxisTicks } from '../utils/locale';
 
-export const SwpCalculator: React.FC = () => {
+interface SwpCalculatorProps {
+  locale: LocaleType;
+}
+
+export const SwpCalculator: React.FC<SwpCalculatorProps> = ({ locale }) => {
   const [pot, setPot] = useState<number>(250000);
   const [withdrawal, setWithdrawal] = useState<number>(1500);
   const [rate, setRate] = useState<number>(6);
@@ -10,37 +16,12 @@ export const SwpCalculator: React.FC = () => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [graphType, setGraphType] = useState<'line' | 'bar'>('line');
 
+  const t = localeConfigs[locale];
+
   // Compute SWP values
   const result = useMemo(() => calculateSwp(pot, withdrawal, rate, years), [pot, withdrawal, rate, years]);
 
-  // Format currency
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
-
-  // Compact currency formatting (e.g. £1.5M, £250k)
-  const formatCompact = (val: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      notation: 'compact',
-      compactDisplay: 'short',
-      style: 'currency',
-      currency: 'GBP',
-      maximumFractionDigits: 1,
-    }).format(val);
-  };
-
-  const getXAxisTicks = (totalYears: number) => {
-    if (totalYears <= 5) return Array.from({ length: totalYears + 1 }, (_, i) => i);
-    if (totalYears <= 12) return Array.from({ length: Math.floor(totalYears / 2) + 1 }, (_, i) => i * 2);
-    if (totalYears <= 25) return Array.from({ length: Math.floor(totalYears / 5) + 1 }, (_, i) => i * 5);
-    return Array.from({ length: Math.floor(totalYears / 10) + 1 }, (_, i) => i * 10);
-  };
-
-  // SVG Chart settings
+  // Chart layout config
   const chartWidth = 500;
   const chartHeight = 220;
   const paddingLeft = 50;
@@ -70,10 +51,17 @@ export const SwpCalculator: React.FC = () => {
     return { line: linePath, area: areaPath, coordinates: coords };
   }, [result.yearlyData, pot, chartWidth, chartHeight]);
 
-
-
   const yearsLasted = Math.floor(result.monthsLasted / 12);
   const monthsLasted = result.monthsLasted % 12;
+
+  // Locale-dependent slider boundaries
+  const potMin = 10000;
+  const potMax = locale === 'in' ? 200000000 : 2000000; // 20Cr vs 2M
+  const potStep = locale === 'in' ? 50000 : 10000;
+
+  const withdrawalMin = 100;
+  const withdrawalMax = locale === 'in' ? 1500000 : 15000; // 15L vs 15k
+  const withdrawalStep = locale === 'in' ? 500 : 100;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -83,15 +71,15 @@ export const SwpCalculator: React.FC = () => {
         <div className="space-y-6">
           <div className="flex items-center gap-2 mb-2">
             <Landmark className="w-5 h-5 text-[var(--theme-accent)]" />
-            <h2 className="text-xl font-bold text-[var(--theme-heading)]">Retirement SWP</h2>
+            <h2 className="text-xl font-bold text-[var(--theme-heading)]">{t.swpCalc.title}</h2>
           </div>
 
           {/* Capital Pot Slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold text-[var(--theme-text)]">Starting Retirement Pot</span>
+              <span className="font-semibold text-[var(--theme-text)]">{t.swpCalc.potLabel}</span>
               <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
-                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <span className="text-xs font-bold text-[var(--theme-accent)]">{t.currencySymbol}</span>
                 <input 
                   type="number" 
                   value={pot === 0 ? '' : pot} 
@@ -102,24 +90,24 @@ export const SwpCalculator: React.FC = () => {
             </div>
             <input 
               type="range" 
-              min={10000} 
-              max={2000000} 
-              step={1000}
+              min={potMin} 
+              max={potMax} 
+              step={potStep}
               value={pot}
               onChange={(e) => setPot(Number(e.target.value))}
             />
             <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60">
-              <span>£10k</span>
-              <span>£2M</span>
+              <span>{t.swpCalc.potMinMax.split(' - ')[0]}</span>
+              <span>{t.swpCalc.potMinMax.split(' - ')[1]}</span>
             </div>
           </div>
 
           {/* Monthly Withdrawal Slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold text-[var(--theme-text)]">Monthly Withdrawal</span>
+              <span className="font-semibold text-[var(--theme-text)]">{t.swpCalc.withdrawalLabel}</span>
               <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-28 focus-within:border-[var(--theme-accent)] transition-all duration-300">
-                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <span className="text-xs font-bold text-[var(--theme-accent)]">{t.currencySymbol}</span>
                 <input 
                   type="number" 
                   value={withdrawal === 0 ? '' : withdrawal} 
@@ -130,22 +118,22 @@ export const SwpCalculator: React.FC = () => {
             </div>
             <input 
               type="range" 
-              min={100} 
-              max={15000} 
-              step={10}
+              min={withdrawalMin} 
+              max={withdrawalMax} 
+              step={withdrawalStep}
               value={withdrawal}
               onChange={(e) => setWithdrawal(Number(e.target.value))}
             />
             <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60">
-              <span>£100</span>
-              <span>£15,000</span>
+              <span>{t.swpCalc.withdrawalMinMax.split(' - ')[0]}</span>
+              <span>{t.swpCalc.withdrawalMinMax.split(' - ')[1]}</span>
             </div>
           </div>
 
           {/* Return Rate Slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold text-[var(--theme-text)]">Annual Growth Rate</span>
+              <span className="font-semibold text-[var(--theme-text)]">{t.swpCalc.rateLabel}</span>
               <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
                 <input 
                   type="number" 
@@ -166,15 +154,15 @@ export const SwpCalculator: React.FC = () => {
               onChange={(e) => setRate(Number(e.target.value))}
             />
             <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60">
-              <span>1%</span>
-              <span>15%</span>
+              <span>{t.swpCalc.rateMinMax.split(' - ')[0]}</span>
+              <span>{t.swpCalc.rateMinMax.split(' - ')[1]}</span>
             </div>
           </div>
 
           {/* Time Duration Slider */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-sm">
-              <span className="font-semibold text-[var(--theme-text)]">Simulation Period</span>
+              <span className="font-semibold text-[var(--theme-text)]">{t.swpCalc.durationLabel}</span>
               <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-24 focus-within:border-[var(--theme-accent)] transition-all duration-300">
                 <input 
                   type="number" 
@@ -182,7 +170,7 @@ export const SwpCalculator: React.FC = () => {
                   onChange={(e) => setYears(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
                   className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
-                <span className="text-xs font-bold text-[var(--theme-accent)]">Yrs</span>
+                <span className="text-xs font-bold text-[var(--theme-accent)]">{t.yearShort}</span>
               </div>
             </div>
             <input 
@@ -194,15 +182,15 @@ export const SwpCalculator: React.FC = () => {
               onChange={(e) => setYears(Number(e.target.value))}
             />
             <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60">
-              <span>5 Yrs</span>
-              <span>40 Yrs</span>
+              <span>{t.swpCalc.durationMinMax.split(' - ')[0]}</span>
+              <span>{t.swpCalc.durationMinMax.split(' - ')[1]}</span>
             </div>
           </div>
         </div>
 
         {/* Informational Blurb */}
         <div className="pt-4 border-t border-[var(--theme-border)] text-xs text-[var(--theme-text)] opacity-70 leading-relaxed font-light">
-          💡 A Systematic Withdrawal Plan (SWP) lets you withdraw a fixed income from your retirement fund, while the remaining balance continues to grow.
+          💡 {t.swpCalc.infoBox}
         </div>
       </div>
 
@@ -214,30 +202,32 @@ export const SwpCalculator: React.FC = () => {
           <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-4 rounded-2xl shadow-sm text-center">
             <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--theme-text)] opacity-70 mb-1 flex items-center justify-center gap-1">
               <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Total Pay</span>
+              <span>{t.swpCalc.cardTotalWithdrawn}</span>
             </div>
             <div className="text-sm sm:text-lg lg:text-xl font-black text-emerald-500">
-              {formatCurrency(result.totalWithdrawn)}
+              {formatCurrency(result.totalWithdrawn, locale)}
             </div>
           </div>
 
           <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-4 rounded-2xl shadow-sm text-center">
             <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--theme-text)] opacity-70 mb-1 flex items-center justify-center gap-1">
               <Hourglass className="w-3.5 h-3.5 text-[var(--theme-accent)]" />
-              <span>Pot Lasts</span>
+              <span>{t.swpCalc.cardPotLasts}</span>
             </div>
             <div className={`text-xs sm:text-base lg:text-lg font-black ${result.isDepleted ? 'text-rose-500' : 'text-emerald-500'}`}>
-              {result.isDepleted ? `${yearsLasted}y ${monthsLasted}m` : 'Infinite / Full'}
+              {result.isDepleted 
+                ? t.swpCalc.yearMonthFormat.replace('{y}', String(yearsLasted)).replace('{m}', String(monthsLasted)) 
+                : t.swpCalc.infinitePot}
             </div>
           </div>
 
           <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] p-4 rounded-2xl shadow-sm text-center">
             <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--theme-text)] opacity-70 mb-1 flex items-center justify-center gap-1">
               <Landmark className="w-3.5 h-3.5 text-amber-500" />
-              <span>End Pot</span>
+              <span>{t.swpCalc.cardEndPot}</span>
             </div>
             <div className="text-sm sm:text-lg lg:text-xl font-black text-[var(--theme-heading)]">
-              {formatCurrency(result.finalBalance)}
+              {formatCurrency(result.finalBalance, locale)}
             </div>
           </div>
         </div>
@@ -246,13 +236,13 @@ export const SwpCalculator: React.FC = () => {
         <div className="bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-3xl p-6 flex-1 flex flex-col justify-between shadow-sm relative overflow-hidden transition-all duration-300">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--theme-heading)]">
-              Retirement Capital Over Time
+              {t.swpCalc.chartTitle}
             </h3>
             <div className="flex items-center gap-3">
               {result.isDepleted && (
                 <span className="flex items-center gap-1 text-[10px] font-bold text-rose-500 uppercase bg-rose-500/10 px-2 py-0.5 rounded-full border border-rose-500/20 animate-pulse">
                   <Flame className="w-3 h-3" />
-                  <span>Depletion Risk</span>
+                  <span>{t.swpCalc.depletionRisk}</span>
                 </span>
               )}
               <div className="flex bg-[var(--theme-bg)] border border-[var(--theme-border)] rounded-xl p-0.5 text-xs select-none">
@@ -260,13 +250,13 @@ export const SwpCalculator: React.FC = () => {
                   onClick={() => setGraphType('line')}
                   className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'line' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
                 >
-                  Line
+                  {t.line}
                 </button>
                 <button 
                   onClick={() => setGraphType('bar')}
                   className={`px-3 py-1 rounded-lg font-semibold transition-all duration-200 cursor-pointer ${graphType === 'bar' ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)] shadow-sm' : 'text-[var(--theme-text)] opacity-70 hover:opacity-100'}`}
                 >
-                  Bar
+                  {t.bar}
                 </button>
               </div>
             </div>
@@ -303,17 +293,17 @@ export const SwpCalculator: React.FC = () => {
                   <g className="select-none pointer-events-none">
                     <line x1={paddingLeft - 4} y1={paddingTop} x2={paddingLeft} y2={paddingTop} stroke="var(--theme-border)" strokeWidth="1" />
                     <text x={paddingLeft - 8} y={paddingTop} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
-                      {formatCompact(maxVal)}
+                      {formatCompact(maxVal, locale)}
                     </text>
 
                     <line x1={paddingLeft - 4} y1={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} x2={paddingLeft} y2={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} stroke="var(--theme-border)" strokeWidth="1" />
                     <text x={paddingLeft - 8} y={paddingTop + (chartHeight - paddingTop - paddingBottom)/2} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
-                      {formatCompact(maxVal / 2)}
+                      {formatCompact(maxVal / 2, locale)}
                     </text>
 
                     <line x1={paddingLeft - 4} y1={chartHeight - paddingBottom} x2={paddingLeft} y2={chartHeight - paddingBottom} stroke="var(--theme-border)" strokeWidth="1" />
                     <text x={paddingLeft - 8} y={chartHeight - paddingBottom} fontSize="9" textAnchor="end" dominantBaseline="middle" fill="var(--theme-text)" opacity="0.6">
-                      £0
+                      {t.currencySymbol}0
                     </text>
                   </g>
                 );
@@ -346,7 +336,7 @@ export const SwpCalculator: React.FC = () => {
                             fill="var(--theme-text)" 
                             opacity="0.6"
                           >
-                            {y === 0 ? 'Start' : `Yr ${y}`}
+                            {y === 0 ? t.start : `${t.yearShort} ${y}`}
                           </text>
                         </g>
                       );
@@ -456,9 +446,9 @@ export const SwpCalculator: React.FC = () => {
                   transform: 'translateX(-50%)',
                 }}
               >
-                <div className="font-bold text-[var(--theme-heading)]">Year {points.coordinates[hoveredIdx].data.year}</div>
-                <div className="text-[var(--theme-text)] opacity-85">withdrawn: <span className="font-semibold">{formatCurrency(points.coordinates[hoveredIdx].data.withdrawn)}</span></div>
-                <div className="text-[var(--theme-accent)]">Remaining Pot: <span className="font-bold">{formatCurrency(points.coordinates[hoveredIdx].data.balance)}</span></div>
+                <div className="font-bold text-[var(--theme-heading)]">{t.yearShort} {points.coordinates[hoveredIdx].data.year}</div>
+                <div className="text-[var(--theme-text)] opacity-85">{t.swpCalc.tooltipWithdrawn}: <span className="font-semibold">{formatCurrency(points.coordinates[hoveredIdx].data.withdrawn, locale)}</span></div>
+                <div className="text-[var(--theme-accent)]">{t.swpCalc.tooltipRemaining}: <span className="font-bold">{formatCurrency(points.coordinates[hoveredIdx].data.balance, locale)}</span></div>
               </div>
             )}
           </div>

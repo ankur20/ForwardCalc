@@ -1,14 +1,18 @@
 import React from 'react';
 import { Sun, Moon, Heart, Sparkles } from 'lucide-react';
+import type { LocaleType } from '../utils/locale';
+import { localeConfigs } from '../utils/locale';
 
 export type ThemeType = 'light' | 'dark' | 'pink' | 'unicorn';
 
 interface ThemeSelectorProps {
   theme: ThemeType;
   setTheme: (theme: ThemeType) => void;
+  locale: LocaleType;
+  setLocale: (locale: LocaleType) => void;
 }
 
-export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme }) => {
+export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme, locale, setLocale }) => {
   const themes: { id: ThemeType; name: string; icon: React.ReactNode; activeColor: string }[] = [
     {
       id: 'light',
@@ -83,9 +87,9 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme })
   };
 
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center w-full max-w-7xl mx-auto py-6 px-4 md:px-8 border-b border-[var(--theme-border)] select-none">
+    <div className="flex flex-col lg:flex-row justify-between items-center w-full max-w-7xl mx-auto py-6 px-4 md:px-8 border-b border-[var(--theme-border)] select-none gap-4">
       {/* Brand Header Logo */}
-      <div className="flex items-center gap-2 mb-4 sm:mb-0">
+      <div className="flex items-center gap-2 mb-2 lg:mb-0">
         <div className="p-2 rounded-xl bg-[var(--theme-accent-light)] text-[var(--theme-accent)] transition-colors duration-300">
           <Sparkles className="w-5 h-5 animate-pulse" />
         </div>
@@ -99,22 +103,47 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme })
         </div>
       </div>
 
-      {/* Theme Options */}
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
-        {themes.map((t) => (
-          <button
-            key={t.id}
-            onClick={(e) => handleThemeChange(t.id, e)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
-              theme === t.id
-                ? t.activeColor
-                : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
-            }`}
-          >
-            {t.icon}
-            <span className="hidden md:inline">{t.name}</span>
-          </button>
-        ))}
+      {/* Selectors Container */}
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        {/* Geography / Locale Selector */}
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
+          {(Object.keys(localeConfigs) as LocaleType[]).map((loc) => {
+            const config = localeConfigs[loc];
+            return (
+              <button
+                key={loc}
+                onClick={() => setLocale(loc)}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
+                  locale === loc
+                    ? 'bg-[var(--theme-accent-light)] text-[var(--theme-accent)] border-[var(--theme-accent)]/20 shadow-sm font-bold scale-[1.02]'
+                    : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
+                }`}
+                title={config.name}
+              >
+                <span className="text-sm">{config.flag}</span>
+                <span className="uppercase text-[10px] tracking-tight">{loc}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Theme Options */}
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
+          {themes.map((t) => (
+            <button
+              key={t.id}
+              onClick={(e) => handleThemeChange(t.id, e)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all duration-300 cursor-pointer border ${
+                theme === t.id
+                  ? t.activeColor
+                  : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
+              }`}
+            >
+              {t.icon}
+              <span className="hidden sm:inline">{t.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
