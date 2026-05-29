@@ -2,7 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Home, Calendar, Clock, Award } from 'lucide-react';
 import { calculateMortgage } from '../utils/calc';
 
-export const MortgageOverpayment: React.FC = () => {
+interface MortgageOverpaymentProps {
+  theme: string;
+}
+
+export const MortgageOverpayment: React.FC<MortgageOverpaymentProps> = ({ theme }) => {
   const [balance, setBalance] = useState<number>(200000);
   const [rate, setRate] = useState<number>(4.5);
   const [term, setTerm] = useState<number>(25);
@@ -49,6 +53,27 @@ export const MortgageOverpayment: React.FC = () => {
 
     return { standardLine, overpaidLine, coordinates: coords };
   }, [result.amortizationData, balance, chartWidth, chartHeight, padding]);
+
+  // Determine character emoji based on active theme
+  const characterEmoji = useMemo(() => {
+    switch (theme) {
+      case 'dark':
+        return '👾';
+      case 'pink':
+        return '🚶‍♀️';
+      case 'unicorn':
+        return '🦄';
+      default:
+        return '🚶‍♂️';
+    }
+  }, [theme]);
+
+  // Track coordinates of the character (falls back to the end of the line if no hover index)
+  const charPos = useMemo(() => {
+    if (points.coordinates.length === 0) return null;
+    const activeIdx = hoveredIdx !== null ? hoveredIdx : points.coordinates.length - 1;
+    return points.coordinates[activeIdx];
+  }, [points.coordinates, hoveredIdx]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -269,6 +294,19 @@ export const MortgageOverpayment: React.FC = () => {
               {/* Trajectory lines */}
               <path d={points.standardLine} stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="4 2" strokeLinecap="round" className="transition-all duration-500" />
               <path d={points.overpaidLine} stroke="var(--theme-accent)" strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-500" />
+
+              {/* Walking Theme Character */}
+              {charPos && (
+                <text 
+                  x={charPos.x} 
+                  y={charPos.yOverpaid - 14} 
+                  fontSize="22" 
+                  textAnchor="middle"
+                  className="transition-all duration-300 select-none pointer-events-none animate-bounce"
+                >
+                  {characterEmoji}
+                </text>
+              )}
 
               {/* Hover Guide Line */}
               {hoveredIdx !== null && points.coordinates[hoveredIdx] && (

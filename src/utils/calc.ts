@@ -6,16 +6,19 @@ export interface SipResult {
   yearlyData: { year: number; invested: number; totalValue: number }[];
 }
 
-export const calculateSip = (monthly: number, rate: number, years: number): SipResult => {
+export const calculateSip = (monthly: number, rate: number, years: number, initialBalance: number = 0): SipResult => {
   const r = rate / 12 / 100;
   const n = years * 12;
-  const yearlyData: { year: number; invested: number; totalValue: number }[] = [];
+  const yearlyData: { year: number; invested: number; totalValue: number }[] = [
+    { year: 0, invested: initialBalance, totalValue: initialBalance }
+  ];
 
-  let accumulated = 0;
-  let invested = 0;
+  let accumulated = initialBalance;
+  let invested = initialBalance;
 
   for (let month = 1; month <= n; month++) {
     invested += monthly;
+    // Compounding formula: adding interest to the previous accumulated sum + the new monthly contribution
     accumulated = (accumulated + monthly) * (1 + r);
 
     // Record data at the end of each year
@@ -30,7 +33,7 @@ export const calculateSip = (monthly: number, rate: number, years: number): SipR
 
   return {
     totalInvested: Math.round(invested),
-    wealthGained: Math.round(accumulated - invested),
+    wealthGained: Math.round(Math.max(0, accumulated - invested)),
     futureValue: Math.round(accumulated),
     yearlyData,
   };

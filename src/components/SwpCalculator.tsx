@@ -2,7 +2,11 @@ import React, { useState, useMemo } from 'react';
 import { Landmark, ArrowUpRight, Flame, Hourglass } from 'lucide-react';
 import { calculateSwp } from '../utils/calc';
 
-export const SwpCalculator: React.FC = () => {
+interface SwpCalculatorProps {
+  theme: string;
+}
+
+export const SwpCalculator: React.FC<SwpCalculatorProps> = ({ theme }) => {
   const [pot, setPot] = useState<number>(250000);
   const [withdrawal, setWithdrawal] = useState<number>(1500);
   const [rate, setRate] = useState<number>(6);
@@ -45,6 +49,27 @@ export const SwpCalculator: React.FC = () => {
 
     return { line: linePath, area: areaPath, coordinates: coords };
   }, [result.yearlyData, pot, chartWidth, chartHeight, padding]);
+
+  // Determine character emoji based on active theme
+  const characterEmoji = useMemo(() => {
+    switch (theme) {
+      case 'dark':
+        return '👾';
+      case 'pink':
+        return '🚶‍♀️';
+      case 'unicorn':
+        return '🦄';
+      default:
+        return '🚶‍♂️';
+    }
+  }, [theme]);
+
+  // Track coordinates of the character (falls back to the end of the line if no hover index)
+  const charPos = useMemo(() => {
+    if (points.coordinates.length === 0) return null;
+    const activeIdx = hoveredIdx !== null ? hoveredIdx : points.coordinates.length - 1;
+    return points.coordinates[activeIdx];
+  }, [points.coordinates, hoveredIdx]);
 
   const yearsLasted = Math.floor(result.monthsLasted / 12);
   const monthsLasted = result.monthsLasted % 12;
@@ -266,6 +291,19 @@ export const SwpCalculator: React.FC = () => {
                 strokeLinecap="round" 
                 className="transition-all duration-500" 
               />
+
+              {/* Walking Theme Character */}
+              {charPos && (
+                <text 
+                  x={charPos.x} 
+                  y={charPos.y - 14} 
+                  fontSize="22" 
+                  textAnchor="middle"
+                  className="transition-all duration-300 select-none pointer-events-none animate-bounce"
+                >
+                  {characterEmoji}
+                </text>
+              )}
 
               {/* Interactive Hover Dots */}
               {points.coordinates.map((c, i) => (

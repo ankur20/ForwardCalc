@@ -2,14 +2,19 @@ import React, { useState, useMemo } from 'react';
 import { TrendingUp, Landmark, Award } from 'lucide-react';
 import { calculateSip } from '../utils/calc';
 
-export const SipCalculator: React.FC = () => {
+interface SipCalculatorProps {
+  theme: string;
+}
+
+export const SipCalculator: React.FC<SipCalculatorProps> = ({ theme }) => {
+  const [initialBalance, setInitialBalance] = useState<number>(10000); // Default to £10,000 starting pot
   const [monthly, setMonthly] = useState<number>(500);
   const [rate, setRate] = useState<number>(10);
   const [years, setYears] = useState<number>(15);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   // Compute SIP values
-  const result = useMemo(() => calculateSip(monthly, rate, years), [monthly, rate, years]);
+  const result = useMemo(() => calculateSip(monthly, rate, years, initialBalance), [monthly, rate, years, initialBalance]);
 
   // Format currency
   const formatCurrency = (val: number) => {
@@ -52,6 +57,27 @@ export const SipCalculator: React.FC = () => {
     return { invested: investedPath, total: totalPath, line: totalLinePath, coordinates: coords };
   }, [result.yearlyData, chartWidth, chartHeight, padding]);
 
+  // Determine character emoji based on active theme
+  const characterEmoji = useMemo(() => {
+    switch (theme) {
+      case 'dark':
+        return '👾';
+      case 'pink':
+        return '🚶‍♀️';
+      case 'unicorn':
+        return '🦄';
+      default:
+        return '🚶‍♂️';
+    }
+  }, [theme]);
+
+  // Track coordinates of the character (falls back to the end of the line if no hover index)
+  const charPos = useMemo(() => {
+    if (points.coordinates.length === 0) return null;
+    const activeIdx = hoveredIdx !== null ? hoveredIdx : points.coordinates.length - 1;
+    return points.coordinates[activeIdx];
+  }, [points.coordinates, hoveredIdx]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
@@ -61,6 +87,34 @@ export const SipCalculator: React.FC = () => {
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-5 h-5 text-[var(--theme-accent)]" />
             <h2 className="text-xl font-bold text-[var(--theme-heading)]">SIP & Growth</h2>
+          </div>
+
+          {/* Initial Balance Slider */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="font-semibold text-[var(--theme-text)]">Initial Investment / Lump Sum</span>
+              <div className="flex items-center gap-1 bg-[var(--theme-panel)] border border-[var(--theme-border)] rounded-xl px-2.5 py-1 w-32 focus-within:border-[var(--theme-accent)] transition-all duration-300">
+                <span className="text-xs font-bold text-[var(--theme-accent)]">£</span>
+                <input 
+                  type="number" 
+                  value={initialBalance === 0 ? '' : initialBalance} 
+                  onChange={(e) => setInitialBalance(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-transparent border-none text-right font-black text-sm text-[var(--theme-heading)] focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+              </div>
+            </div>
+            <input 
+              type="range" 
+              min={0} 
+              max={1000000} 
+              step={100}
+              value={initialBalance}
+              onChange={(e) => setInitialBalance(Number(e.target.value))}
+            />
+            <div className="flex justify-between text-[10px] text-[var(--theme-text)] opacity-60">
+              <span>£0 (None)</span>
+              <span>£1M</span>
+            </div>
           </div>
 
           {/* Monthly Investment Slider */}
@@ -228,6 +282,19 @@ export const SipCalculator: React.FC = () => {
 
               {/* Line paths */}
               <path d={points.line} stroke="var(--theme-accent)" strokeWidth="3" strokeLinecap="round" className="transition-all duration-500" />
+
+              {/* Walking Theme Character */}
+              {charPos && (
+                <text 
+                  x={charPos.x} 
+                  y={charPos.yTotal - 14} 
+                  fontSize="22" 
+                  textAnchor="middle"
+                  className="transition-all duration-300 select-none pointer-events-none animate-bounce"
+                >
+                  {characterEmoji}
+                </text>
+              )}
 
               {/* Interactive Hover Dots */}
               {points.coordinates.map((c, i) => (

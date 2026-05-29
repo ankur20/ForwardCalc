@@ -93,10 +93,10 @@ function App() {
 
         {/* Active Panel View */}
         <div className="w-full transition-all duration-500">
-          {activeTab === 'sip' && <SipCalculator />}
-          {activeTab === 'swp' && <SwpCalculator />}
-          {activeTab === 'mortgage' && <MortgageOverpayment />}
-          {activeTab === 'fire' && <FireCalculator />}
+          {activeTab === 'sip' && <SipCalculator theme={theme} />}
+          {activeTab === 'swp' && <SwpCalculator theme={theme} />}
+          {activeTab === 'mortgage' && <MortgageOverpayment theme={theme} />}
+          {activeTab === 'fire' && <FireCalculator theme={theme} />}
           {activeTab === 'tax' && <TaxOptimizer />}
         </div>
       </main>
