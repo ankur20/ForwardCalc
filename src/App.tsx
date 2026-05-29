@@ -86,6 +86,23 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Listen for clicks outside to close dropdowns
+  useEffect(() => {
+    if (openDropdownSlotIndex === null) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.dropdown-solid') && !target.closest('.placeholder-tile')) {
+        setOpenDropdownSlotIndex(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [openDropdownSlotIndex]);
+
   // Sync slots when locale changes (e.g. adjust slot size, clean 'tax')
   useEffect(() => {
     setSlots(prev => {
@@ -238,12 +255,12 @@ function App() {
                 return (
                   <div
                     key={`empty-${slotIndex}`}
-                    className={`relative flex items-center justify-center p-3.5 rounded-2xl border border-dashed border-[var(--theme-border)] text-[var(--theme-text)] transition-all duration-300 cursor-pointer min-h-[64px] ${
+                    className={`placeholder-tile relative flex items-center justify-center p-3.5 rounded-2xl border border-dashed border-[var(--theme-border)] text-[var(--theme-text)] transition-all duration-300 cursor-pointer min-h-[64px] ${
                       openDropdownSlotIndex === slotIndex
                         ? 'bg-[var(--theme-accent-light)]/20 border-[var(--theme-accent)]/30 text-[var(--theme-accent)] opacity-100'
                         : 'opacity-60 hover:opacity-100 hover:bg-[var(--theme-accent-light)]/10 hover:border-[var(--theme-accent)]/20'
                     }`}
-                    onClick={() => setOpenDropdownSlotIndex(slotIndex)}
+                    onClick={() => setOpenDropdownSlotIndex(prev => prev === slotIndex ? null : slotIndex)}
                   >
                     <div className="flex items-center gap-2 font-semibold text-xs sm:text-sm">
                       <Plus className="w-4 h-4" />
@@ -252,15 +269,7 @@ function App() {
 
                     {/* Dropdown Menu for this slot */}
                     {openDropdownSlotIndex === slotIndex && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-40 bg-transparent" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenDropdownSlotIndex(null);
-                          }} 
-                        />
-                        <div className="absolute left-1/2 -translate-x-1/2 lg:left-auto lg:right-0 lg:translate-x-0 top-full mt-2 w-72 rounded-2xl dropdown-solid border border-[var(--theme-border)] shadow-lg p-2.5 z-50 animate-fade-in flex flex-col gap-1">
+                      <div className="absolute left-1/2 -translate-x-1/2 lg:left-auto lg:right-0 lg:translate-x-0 top-full mt-2 w-72 rounded-2xl dropdown-solid border border-[var(--theme-border)] shadow-lg p-2.5 z-50 animate-fade-in flex flex-col gap-1">
                           <div className="text-[10px] uppercase font-black tracking-widest text-[var(--theme-text)] opacity-50 px-2.5 py-1.5 border-b border-[var(--theme-border)]">
                             Choose Calculator
                           </div>
@@ -289,7 +298,6 @@ function App() {
                             ))
                           )}
                         </div>
-                      </>
                     )}
                   </div>
                 );
