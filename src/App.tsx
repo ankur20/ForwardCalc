@@ -8,7 +8,7 @@ import { SwpCalculator } from './components/SwpCalculator';
 import { MortgageOverpayment } from './components/MortgageOverpayment';
 import { FireCalculator } from './components/FireCalculator';
 import { TaxOptimizer } from './components/TaxOptimizer';
-import { TrendingUp, Landmark, Home, Target, Landmark as TaxIcon } from 'lucide-react';
+import { TrendingUp, Landmark, Home, Target, Landmark as TaxIcon, Plus, X } from 'lucide-react';
 
 type TabType = 'sip' | 'swp' | 'mortgage' | 'fire' | 'tax';
 
@@ -42,17 +42,54 @@ const getInitialLocale = (): LocaleType => {
   return 'uk';
 };
 
+const getInitialPinnedTabs = (locale: LocaleType): TabType[] => {
+  const saved = localStorage.getItem('pinned_tabs');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved) as TabType[];
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter(id => id !== 'tax' || locale === 'uk');
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+  }
+  const defaults: TabType[] = ['sip', 'swp', 'mortgage', 'fire'];
+  if (locale === 'uk') {
+    defaults.push('tax');
+  }
+  return defaults;
+};
+
 function App() {
   const [theme, setTheme] = useState<ThemeType>(getInitialTheme);
   const [locale, setLocale] = useState<LocaleType>(getInitialLocale);
-  const [activeTab, setActiveTab] = useState<TabType>('sip');
+  const [pinnedTabs, setPinnedTabs] = useState<TabType[]>(() => getInitialPinnedTabs(locale));
+  const [activeTab, setActiveTab] = useState<TabType>(() => pinnedTabs[0] || 'sip');
+  const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
 
-  // Redirect to 'sip' tab if activeTab is 'tax' and locale is not 'uk'
+  // Sync pinned tabs when locale changes (e.g. filter out tax if leaving UK)
   useEffect(() => {
-    if (locale !== 'uk' && activeTab === 'tax') {
-      setActiveTab('sip');
+    setPinnedTabs(prev => {
+      const filtered = prev.filter(id => id !== 'tax' || locale === 'uk');
+      if (filtered.length === 0) {
+        return ['sip'];
+      }
+      return filtered;
+    });
+  }, [locale]);
+
+  // Sync pinned tabs to localStorage
+  useEffect(() => {
+    localStorage.setItem('pinned_tabs', JSON.stringify(pinnedTabs));
+  }, [pinnedTabs]);
+
+  // Auto-redirect active tab if it gets unpinned or disabled
+  useEffect(() => {
+    if (!pinnedTabs.includes(activeTab)) {
+      setActiveTab(pinnedTabs[0] || 'sip');
     }
-  }, [locale, activeTab]);
+  }, [pinnedTabs, activeTab]);
 
   // Sync theme preference to localStorage
   useEffect(() => {
@@ -63,6 +100,21 @@ function App() {
   useEffect(() => {
     localStorage.setItem('locale', locale);
   }, [locale]);
+
+  const handleUnpin = (tabId: TabType, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (pinnedTabs.length <= 1) return;
+    const newPinned = pinnedTabs.filter(id => id !== tabId);
+    setPinnedTabs(newPinned);
+  };
+
+  const handlePin = (tabId: TabType) => {
+    if (pinnedTabs.length >= 5) return;
+    const newPinned = [...pinnedTabs, tabId];
+    setPinnedTabs(newPinned);
+    setActiveTab(tabId);
+    setIsAddDropdownOpen(false);
+  };
 
   const config = localeConfigs[locale];
 
@@ -99,7 +151,9 @@ function App() {
     }
   ];
 
-  const filteredTabs = tabs.filter(t => t.id !== 'tax' || locale === 'uk');
+  const availableCalculators = tabs.filter(t => t.id !== 'tax' || locale === 'uk');
+  const unpinnedCalculators = availableCalculators.filter(t => !pinnedTabs.includes(t.id));
+  const pinnedTabObjects = pinnedTabs.map(id => tabs.find(t => t.id === id)).filter(Boolean) as typeof tabs;
 
   return (
     <div className={`theme-${theme} min-h-screen transition-colors duration-500 bg-[var(--theme-bg)] flex flex-col justify-between`} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -114,28 +168,88 @@ function App() {
         
         {/* Navigation Selector */}
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 mb-8 select-none">
-          <div className={`grid grid-cols-2 ${filteredTabs.length === 5 ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-2.5 p-1.5 rounded-3xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300`}>
-            {filteredTabs.map((tab) => (
-              <button
+          <div className="flex flex-wrap md:flex-nowrap items-stretch gap-2.5 p-1.5 rounded-3xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300 w-full relative">
+            
+            {/* Pinned Tab Buttons */}
+            {pinnedTabObjects.map((tab) => (
+              <div
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center sm:items-start text-center sm:text-left p-3.5 rounded-2xl transition-all duration-300 cursor-pointer border ${
+                className={`relative flex items-center justify-between gap-3 p-3.5 rounded-2xl transition-all duration-300 cursor-pointer border flex-1 min-w-[140px] md:min-w-0 ${
                   activeTab === tab.id
                     ? 'bg-[var(--theme-accent-light)] text-[var(--theme-accent)] border-[var(--theme-accent)]/20 shadow-sm font-bold scale-[1.02]'
                     : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`p-1 rounded-lg ${activeTab === tab.id ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)]' : 'bg-transparent'}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`p-1.5 rounded-lg ${activeTab === tab.id ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)]' : 'bg-transparent'}`}>
                     {tab.icon}
                   </span>
-                  <span className="text-xs sm:text-sm font-bold tracking-tight">{tab.name}</span>
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-xs sm:text-sm font-bold tracking-tight">{tab.name}</span>
+                    <span className="hidden sm:inline text-[10px] opacity-70 font-light">
+                      {tab.desc}
+                    </span>
+                  </div>
                 </div>
-                <span className="hidden sm:inline text-[10px] opacity-70 leading-tight">
-                  {tab.desc}
-                </span>
-              </button>
+
+                {/* Close Button (Unpin) */}
+                {pinnedTabs.length > 1 && (
+                  <button
+                    onClick={(e) => handleUnpin(tab.id, e)}
+                    className="p-1 rounded-full hover:bg-[var(--theme-panel)] text-[var(--theme-text)] opacity-40 hover:opacity-100 transition-all duration-200 focus:outline-none flex items-center justify-center cursor-pointer"
+                    title="Remove calculator tab"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             ))}
+
+            {/* Add Calculator Button */}
+            {unpinnedCalculators.length > 0 && (
+              <div className="relative flex-1 md:flex-initial min-w-[140px]">
+                <button
+                  onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
+                  className={`w-full h-full flex items-center justify-center gap-1.5 p-3.5 rounded-2xl border border-dashed border-[var(--theme-border)] text-[var(--theme-accent)] hover:bg-[var(--theme-accent-light)] transition-all duration-300 cursor-pointer font-bold text-xs sm:text-sm shadow-sm ${
+                    isAddDropdownOpen ? 'bg-[var(--theme-accent-light)] border-[var(--theme-accent)]/30' : ''
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Calculator</span>
+                </button>
+
+                {/* Dropdown Menu Overlay */}
+                {isAddDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40 bg-transparent" 
+                      onClick={() => setIsAddDropdownOpen(false)} 
+                    />
+                    <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-lg p-2.5 z-50 animate-fade-in flex flex-col gap-1">
+                      <div className="text-[10px] uppercase font-black tracking-widest text-[var(--theme-text)] opacity-50 px-2.5 py-1.5 border-b border-[var(--theme-border)]">
+                        More Calculators
+                      </div>
+                      {unpinnedCalculators.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => handlePin(tab.id)}
+                          className="flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-[var(--theme-bg)] transition-all duration-200 cursor-pointer w-full"
+                        >
+                          <span className="p-1.5 rounded-lg bg-[var(--theme-accent-light)] text-[var(--theme-accent)] mt-0.5">
+                            {tab.icon}
+                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-bold text-[var(--theme-heading)]">{tab.name}</span>
+                            <span className="text-[10px] text-[var(--theme-text)] opacity-70 leading-normal">{tab.desc}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
