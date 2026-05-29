@@ -1,12 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Target, HelpCircle, Activity, Award } from 'lucide-react';
 import { calculateFire } from '../utils/calc';
 
-interface FireCalculatorProps {
-  theme: string;
-}
-
-export const FireCalculator: React.FC<FireCalculatorProps> = ({ theme }) => {
+export const FireCalculator: React.FC = () => {
   const [age, setAge] = useState<number>(30);
   const [expenses, setExpenses] = useState<number>(30000);
   const [netWorth, setNetWorth] = useState<number>(50000);
@@ -56,46 +52,7 @@ export const FireCalculator: React.FC<FireCalculatorProps> = ({ theme }) => {
     return { line, targetLine, coordinates: coords };
   }, [result.yearlyBalances, result.fireTarget, chartWidth, chartHeight, padding]);
 
-  // Determine character emoji based on active theme
-  const characterEmoji = useMemo(() => {
-    switch (theme) {
-      case 'dark':
-        return '👾';
-      case 'pink':
-        return '🚶‍♀️';
-      case 'unicorn':
-        return '🦄';
-      default:
-        return '🚶‍♂️';
-    }
-  }, [theme]);
 
-  const [walkIdx, setWalkIdx] = useState<number>(0);
-
-  // Animate character along path when data updates
-  useEffect(() => {
-    setWalkIdx(0);
-    let current = 0;
-    const target = points.coordinates.length - 1;
-    if (target <= 0) return;
-
-    const interval = setInterval(() => {
-      current++;
-      setWalkIdx(current);
-      if (current >= target) {
-        clearInterval(interval);
-      }
-    }, 70);
-
-    return () => clearInterval(interval);
-  }, [points.coordinates]);
-
-  // Track coordinates of the character (falls back to current animated index if not hovered)
-  const charPos = useMemo(() => {
-    if (points.coordinates.length === 0) return null;
-    const activeIdx = hoveredIdx !== null ? hoveredIdx : Math.min(walkIdx, points.coordinates.length - 1);
-    return points.coordinates[activeIdx];
-  }, [points.coordinates, hoveredIdx, walkIdx]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -335,29 +292,7 @@ export const FireCalculator: React.FC<FireCalculatorProps> = ({ theme }) => {
               )}
 
               {/* Accumulated Wealth line */}
-              <path d={points.line} stroke="var(--theme-accent)" strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-500" />
-
-              {/* Walking Theme Character */}
-              {charPos && (
-                <g
-                  style={{
-                    transform: `translate(${charPos.x}px, ${Math.max(26, charPos.y - 12)}px)`,
-                    transition: 'transform 0.15s linear'
-                  }}
-                  className="select-none pointer-events-none"
-                >
-                  <text 
-                    x="0" 
-                    y="0" 
-                    fontSize="22" 
-                    textAnchor="middle"
-                    fill="currentColor"
-                    className="char-walk-animation"
-                  >
-                    {characterEmoji}
-                  </text>
-                </g>
-              )}
+              <path d={points.line} stroke="var(--theme-accent)" strokeWidth="3.5" strokeLinecap="round" className="transition-all duration-500 animate-graph-line graph-glow" />
 
               {/* Interactive Hover Dots */}
               {points.coordinates.map((c, i) => (

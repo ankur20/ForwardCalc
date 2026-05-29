@@ -182,15 +182,34 @@ input[type=range]::-moz-range-thumb {
   }
 }
 
-/* Walking Character Waddling Animation */
-@keyframes character-walk {
-  0% { transform: translateY(0) rotate(-4deg); }
-  50% { transform: translateY(-5px) rotate(4deg); }
-  100% { transform: translateY(0) rotate(-4deg); }
+/* Graph path draw-in animation */
+@keyframes graph-draw {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
-.char-walk-animation {
-  display: inline-block;
-  transform-origin: bottom center;
-  animation: character-walk 0.5s ease-in-out infinite;
+.animate-graph-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: graph-draw 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Subtle pulsing glow for graph line */
+@keyframes line-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 1px var(--theme-accent));
+    opacity: 0.95;
+  }
+  50% {
+    filter: drop-shadow(0 0 3px var(--theme-accent));
+    opacity: 1;
+  }
+}
+
+.graph-glow {
+  animation: line-glow 3s ease-in-out infinite;
 }
