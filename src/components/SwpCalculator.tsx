@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Landmark, ArrowUpRight, Flame, Hourglass } from 'lucide-react';
 import { calculateSwp } from '../utils/calc';
 
@@ -64,12 +64,32 @@ export const SwpCalculator: React.FC<SwpCalculatorProps> = ({ theme }) => {
     }
   }, [theme]);
 
-  // Track coordinates of the character (falls back to the end of the line if no hover index)
+  const [walkIdx, setWalkIdx] = useState<number>(0);
+
+  // Animate character along path when data updates
+  useEffect(() => {
+    setWalkIdx(0);
+    let current = 0;
+    const target = points.coordinates.length - 1;
+    if (target <= 0) return;
+
+    const interval = setInterval(() => {
+      current++;
+      setWalkIdx(current);
+      if (current >= target) {
+        clearInterval(interval);
+      }
+    }, 70);
+
+    return () => clearInterval(interval);
+  }, [points.coordinates]);
+
+  // Track coordinates of the character (falls back to current animated index if not hovered)
   const charPos = useMemo(() => {
     if (points.coordinates.length === 0) return null;
-    const activeIdx = hoveredIdx !== null ? hoveredIdx : points.coordinates.length - 1;
+    const activeIdx = hoveredIdx !== null ? hoveredIdx : Math.min(walkIdx, points.coordinates.length - 1);
     return points.coordinates[activeIdx];
-  }, [points.coordinates, hoveredIdx]);
+  }, [points.coordinates, hoveredIdx, walkIdx]);
 
   const yearsLasted = Math.floor(result.monthsLasted / 12);
   const monthsLasted = result.monthsLasted % 12;
@@ -294,16 +314,24 @@ export const SwpCalculator: React.FC<SwpCalculatorProps> = ({ theme }) => {
 
               {/* Walking Theme Character */}
               {charPos && (
-                <text 
-                  x={charPos.x} 
-                  y={Math.max(26, charPos.y - 12)} 
-                  fontSize="22" 
-                  textAnchor="middle"
-                  fill="currentColor"
-                  className="transition-all duration-300 select-none pointer-events-none animate-bounce"
+                <g
+                  style={{
+                    transform: `translate(${charPos.x}px, ${Math.max(26, charPos.y - 12)}px)`,
+                    transition: 'transform 0.15s linear'
+                  }}
+                  className="select-none pointer-events-none"
                 >
-                  {characterEmoji}
-                </text>
+                  <text 
+                    x="0" 
+                    y="0" 
+                    fontSize="22" 
+                    textAnchor="middle"
+                    fill="currentColor"
+                    className="char-walk-animation"
+                  >
+                    {characterEmoji}
+                  </text>
+                </g>
               )}
 
               {/* Interactive Hover Dots */}

@@ -181,3 +181,16 @@ input[type=range]::-moz-range-thumb {
     opacity: 0;
   }
 }
+
+/* Walking Character Waddling Animation */
+@keyframes character-walk {
+  0% { transform: translateY(0) rotate(-4deg); }
+  50% { transform: translateY(-5px) rotate(4deg); }
+  100% { transform: translateY(0) rotate(-4deg); }
+}
+
+.char-walk-animation {
+  display: inline-block;
+  transform-origin: bottom center;
+  animation: character-walk 0.5s ease-in-out infinite;
+}
