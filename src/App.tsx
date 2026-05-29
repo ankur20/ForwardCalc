@@ -10,15 +10,23 @@ import { TrendingUp, Landmark, Home, Target, Landmark as TaxIcon } from 'lucide-
 
 type TabType = 'sip' | 'swp' | 'mortgage' | 'fire' | 'tax';
 
+const getInitialTheme = (): ThemeType => {
+  const saved = localStorage.getItem('theme') as ThemeType;
+  if (saved && ['light', 'dark', 'pink', 'unicorn'].includes(saved)) {
+    return saved;
+  }
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return isDark ? 'dark' : 'light';
+};
+
 function App() {
-  const [theme, setTheme] = useState<ThemeType>('light');
+  const [theme, setTheme] = useState<ThemeType>(getInitialTheme);
   const [activeTab, setActiveTab] = useState<TabType>('sip');
 
-  // Load theme preference from system on mount
+  // Sync theme preference to localStorage
   useEffect(() => {
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(isDark ? 'dark' : 'light');
-  }, []);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   const tabs: { id: TabType; name: string; icon: React.ReactNode; desc: string }[] = [
     {

@@ -296,9 +296,10 @@ export const SwpCalculator: React.FC<SwpCalculatorProps> = ({ theme }) => {
               {charPos && (
                 <text 
                   x={charPos.x} 
-                  y={charPos.y - 14} 
+                  y={Math.max(26, charPos.y - 12)} 
                   fontSize="22" 
                   textAnchor="middle"
+                  fill="currentColor"
                   className="transition-all duration-300 select-none pointer-events-none animate-bounce"
                 >
                   {characterEmoji}

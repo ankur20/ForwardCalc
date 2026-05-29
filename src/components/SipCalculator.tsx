@@ -287,9 +287,10 @@ export const SipCalculator: React.FC<SipCalculatorProps> = ({ theme }) => {
               {charPos && (
                 <text 
                   x={charPos.x} 
-                  y={charPos.yTotal - 14} 
+                  y={Math.max(26, charPos.yTotal - 12)} 
                   fontSize="22" 
                   textAnchor="middle"
+                  fill="currentColor"
                   className="transition-all duration-300 select-none pointer-events-none animate-bounce"
                 >
                   {characterEmoji}
