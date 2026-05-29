@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ThemeSelector } from './components/ThemeSelector';
 import type { ThemeType } from './components/ThemeSelector';
 import type { LocaleType } from './utils/locale';
@@ -42,19 +42,28 @@ const getInitialLocale = (): LocaleType => {
   return 'uk';
 };
 
-const getInitialPinnedTabs = (locale: LocaleType): TabType[] => {
-  const saved = localStorage.getItem('pinned_tabs');
+const getInitialSlots = (locale: LocaleType): (TabType | null)[] => {
+  const saved = localStorage.getItem('calculator_slots');
   if (saved) {
     try {
-      const parsed = JSON.parse(saved) as TabType[];
+      const parsed = JSON.parse(saved) as (TabType | null)[];
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.filter(id => id !== 'tax' || locale === 'uk');
+        const maxSlots = locale === 'uk' ? 5 : 4;
+        let cleaned = parsed.map(id => (id === 'tax' && locale !== 'uk' ? null : id));
+        if (cleaned.length > maxSlots) {
+          cleaned = cleaned.slice(0, maxSlots);
+        } else {
+          while (cleaned.length < maxSlots) {
+            cleaned.push(null);
+          }
+        }
+        return cleaned;
       }
     } catch (e) {
-      // Ignore parse errors
+      // Ignore
     }
   }
-  const defaults: TabType[] = ['sip', 'swp', 'mortgage', 'fire'];
+  const defaults: (TabType | null)[] = ['sip', 'swp', 'mortgage', 'fire'];
   if (locale === 'uk') {
     defaults.push('tax');
   }
@@ -64,32 +73,49 @@ const getInitialPinnedTabs = (locale: LocaleType): TabType[] => {
 function App() {
   const [theme, setTheme] = useState<ThemeType>(getInitialTheme);
   const [locale, setLocale] = useState<LocaleType>(getInitialLocale);
-  const [pinnedTabs, setPinnedTabs] = useState<TabType[]>(() => getInitialPinnedTabs(locale));
-  const [activeTab, setActiveTab] = useState<TabType>(() => pinnedTabs[0] || 'sip');
-  const [isAddDropdownOpen, setIsAddDropdownOpen] = useState(false);
+  const [slots, setSlots] = useState<(TabType | null)[]>(() => getInitialSlots(locale));
+  const [activeTab, setActiveTab] = useState<TabType>('sip');
+  const [openDropdownSlotIndex, setOpenDropdownSlotIndex] = useState<number | null>(null);
+  const selectorRef = useRef<HTMLDivElement>(null);
 
-  // Sync pinned tabs when locale changes (e.g. filter out tax if leaving UK)
+  // Auto-scroll to selector on mount
   useEffect(() => {
-    setPinnedTabs(prev => {
-      const filtered = prev.filter(id => id !== 'tax' || locale === 'uk');
-      if (filtered.length === 0) {
-        return ['sip'];
+    const timer = setTimeout(() => {
+      selectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 450);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Sync slots when locale changes (e.g. adjust slot size, clean 'tax')
+  useEffect(() => {
+    setSlots(prev => {
+      const maxSlots = locale === 'uk' ? 5 : 4;
+      let cleaned = prev.map(id => (id === 'tax' && locale !== 'uk' ? null : id));
+      if (cleaned.length > maxSlots) {
+        cleaned = cleaned.slice(0, maxSlots);
+      } else {
+        while (cleaned.length < maxSlots) {
+          cleaned.push(null);
+        }
       }
-      return filtered;
+      return cleaned;
     });
   }, [locale]);
 
-  // Sync pinned tabs to localStorage
+  // Sync slots to localStorage
   useEffect(() => {
-    localStorage.setItem('pinned_tabs', JSON.stringify(pinnedTabs));
-  }, [pinnedTabs]);
+    localStorage.setItem('calculator_slots', JSON.stringify(slots));
+  }, [slots]);
 
-  // Auto-redirect active tab if it gets unpinned or disabled
+  // Auto-redirect active tab if its slot becomes empty
   useEffect(() => {
-    if (!pinnedTabs.includes(activeTab)) {
-      setActiveTab(pinnedTabs[0] || 'sip');
+    if (!slots.includes(activeTab)) {
+      const firstNonNull = slots.find(id => id !== null);
+      if (firstNonNull) {
+        setActiveTab(firstNonNull);
+      }
     }
-  }, [pinnedTabs, activeTab]);
+  }, [slots, activeTab]);
 
   // Sync theme preference to localStorage
   useEffect(() => {
@@ -101,19 +127,21 @@ function App() {
     localStorage.setItem('locale', locale);
   }, [locale]);
 
-  const handleUnpin = (tabId: TabType, e: React.MouseEvent) => {
+  const handleRemoveSlot = (slotIndex: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (pinnedTabs.length <= 1) return;
-    const newPinned = pinnedTabs.filter(id => id !== tabId);
-    setPinnedTabs(newPinned);
+    const activeSlotsCount = slots.filter(id => id !== null).length;
+    if (activeSlotsCount <= 1) return; // Keep at least one active
+    const newSlots = [...slots];
+    newSlots[slotIndex] = null;
+    setSlots(newSlots);
   };
 
-  const handlePin = (tabId: TabType) => {
-    if (pinnedTabs.length >= 5) return;
-    const newPinned = [...pinnedTabs, tabId];
-    setPinnedTabs(newPinned);
+  const handleAssignSlot = (slotIndex: number, tabId: TabType) => {
+    const newSlots = [...slots];
+    newSlots[slotIndex] = tabId;
+    setSlots(newSlots);
     setActiveTab(tabId);
-    setIsAddDropdownOpen(false);
+    setOpenDropdownSlotIndex(null);
   };
 
   const config = localeConfigs[locale];
@@ -152,8 +180,8 @@ function App() {
   ];
 
   const availableCalculators = tabs.filter(t => t.id !== 'tax' || locale === 'uk');
-  const unpinnedCalculators = availableCalculators.filter(t => !pinnedTabs.includes(t.id));
-  const pinnedTabObjects = pinnedTabs.map(id => tabs.find(t => t.id === id)).filter(Boolean) as typeof tabs;
+  const assignedIds = slots.filter(id => id !== null) as TabType[];
+  const unassignedCalculators = availableCalculators.filter(t => !assignedIds.includes(t.id));
 
   return (
     <div className={`theme-${theme} min-h-screen transition-colors duration-500 bg-[var(--theme-bg)] flex flex-col justify-between`} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -167,89 +195,104 @@ function App() {
       <main className="relative z-10 w-full flex-1 flex flex-col items-center py-8">
         
         {/* Navigation Selector */}
-        <div className="w-full max-w-7xl mx-auto px-4 md:px-8 mb-8 select-none">
-          <div className="flex flex-wrap md:flex-nowrap items-stretch gap-2.5 p-1.5 rounded-3xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300 w-full relative">
-            
-            {/* Pinned Tab Buttons */}
-            {pinnedTabObjects.map((tab) => (
-              <div
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center justify-between gap-3 p-3.5 rounded-2xl transition-all duration-300 cursor-pointer border flex-1 min-w-[140px] md:min-w-0 ${
-                  activeTab === tab.id
-                    ? 'bg-[var(--theme-accent-light)] text-[var(--theme-accent)] border-[var(--theme-accent)]/20 shadow-sm font-bold scale-[1.02]'
-                    : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className={`p-1.5 rounded-lg ${activeTab === tab.id ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)]' : 'bg-transparent'}`}>
-                    {tab.icon}
-                  </span>
-                  <div className="flex flex-col items-start leading-tight">
-                    <span className="text-xs sm:text-sm font-bold tracking-tight">{tab.name}</span>
-                    <span className="hidden sm:inline text-[10px] opacity-70 font-light">
-                      {tab.desc}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Close Button (Unpin) */}
-                {pinnedTabs.length > 1 && (
-                  <button
-                    onClick={(e) => handleUnpin(tab.id, e)}
-                    className="p-1 rounded-full hover:bg-[var(--theme-panel)] text-[var(--theme-text)] opacity-40 hover:opacity-100 transition-all duration-200 focus:outline-none flex items-center justify-center cursor-pointer"
-                    title="Remove calculator tab"
+        <div ref={selectorRef} className="w-full max-w-7xl mx-auto px-4 md:px-8 mb-8 select-none">
+          <div className={`grid grid-cols-2 ${slots.length === 5 ? 'sm:grid-cols-3 lg:grid-cols-5' : 'sm:grid-cols-4'} gap-2.5 p-1.5 rounded-3xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300 w-full relative`}>
+            {slots.map((slotId, slotIndex) => {
+              if (slotId !== null) {
+                const tab = tabs.find(t => t.id === slotId)!;
+                return (
+                  <div
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative flex items-center justify-between gap-3 p-3.5 rounded-2xl transition-all duration-300 cursor-pointer border min-h-[64px] ${
+                      activeTab === tab.id
+                        ? 'bg-[var(--theme-accent-light)] text-[var(--theme-accent)] border-[var(--theme-accent)]/20 shadow-sm font-bold scale-[1.02]'
+                        : 'border-transparent text-[var(--theme-text)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-heading)]'
+                    }`}
                   >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            ))}
-
-            {/* Add Calculator Button */}
-            {unpinnedCalculators.length > 0 && (
-              <div className="relative flex-1 md:flex-initial min-w-[140px]">
-                <button
-                  onClick={() => setIsAddDropdownOpen(!isAddDropdownOpen)}
-                  className={`w-full h-full flex items-center justify-center gap-1.5 p-3.5 rounded-2xl border border-dashed border-[var(--theme-border)] text-[var(--theme-accent)] hover:bg-[var(--theme-accent-light)] transition-all duration-300 cursor-pointer font-bold text-xs sm:text-sm shadow-sm ${
-                    isAddDropdownOpen ? 'bg-[var(--theme-accent-light)] border-[var(--theme-accent)]/30' : ''
-                  }`}
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Calculator</span>
-                </button>
-
-                {/* Dropdown Menu Overlay */}
-                {isAddDropdownOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40 bg-transparent" 
-                      onClick={() => setIsAddDropdownOpen(false)} 
-                    />
-                    <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-lg p-2.5 z-50 animate-fade-in flex flex-col gap-1">
-                      <div className="text-[10px] uppercase font-black tracking-widest text-[var(--theme-text)] opacity-50 px-2.5 py-1.5 border-b border-[var(--theme-border)]">
-                        More Calculators
+                    <div className="flex items-center gap-2">
+                      <span className={`p-1.5 rounded-lg ${activeTab === tab.id ? 'bg-[var(--theme-panel)] text-[var(--theme-accent)]' : 'bg-transparent'}`}>
+                        {tab.icon}
+                      </span>
+                      <div className="flex flex-col items-start leading-tight">
+                        <span className="text-xs sm:text-sm font-bold tracking-tight">{tab.name}</span>
+                        <span className="hidden sm:inline text-[10px] opacity-70 font-light">
+                          {tab.desc}
+                        </span>
                       </div>
-                      {unpinnedCalculators.map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => handlePin(tab.id)}
-                          className="flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-[var(--theme-bg)] transition-all duration-200 cursor-pointer w-full"
-                        >
-                          <span className="p-1.5 rounded-lg bg-[var(--theme-accent-light)] text-[var(--theme-accent)] mt-0.5">
-                            {tab.icon}
-                          </span>
-                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-[var(--theme-heading)]">{tab.name}</span>
-                            <span className="text-[10px] text-[var(--theme-text)] opacity-70 leading-normal">{tab.desc}</span>
-                          </div>
-                        </button>
-                      ))}
                     </div>
-                  </>
-                )}
-              </div>
-            )}
+
+                    {/* Close Button (Unassign/Remove from slot) */}
+                    {slots.filter(id => id !== null).length > 1 && (
+                      <button
+                        onClick={(e) => handleRemoveSlot(slotIndex, e)}
+                        className="p-1 rounded-full hover:bg-[var(--theme-panel)] text-[var(--theme-text)] opacity-40 hover:opacity-100 transition-all duration-200 focus:outline-none flex items-center justify-center cursor-pointer"
+                        title="Remove calculator"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              } else {
+                return (
+                  <div
+                    key={`empty-${slotIndex}`}
+                    className={`relative flex items-center justify-center p-3.5 rounded-2xl border border-dashed border-[var(--theme-border)] text-[var(--theme-text)] opacity-60 hover:opacity-100 hover:bg-[var(--theme-accent-light)]/20 hover:border-[var(--theme-accent)]/30 hover:text-[var(--theme-accent)] transition-all duration-300 cursor-pointer min-h-[64px] ${
+                      openDropdownSlotIndex === slotIndex ? 'bg-[var(--theme-accent-light)]/20 border-[var(--theme-accent)]/30 text-[var(--theme-accent)]' : ''
+                    }`}
+                    onClick={() => setOpenDropdownSlotIndex(slotIndex)}
+                  >
+                    <div className="flex items-center gap-2 font-semibold text-xs sm:text-sm">
+                      <Plus className="w-4 h-4" />
+                      <span>Choose Calculator</span>
+                    </div>
+
+                    {/* Dropdown Menu for this slot */}
+                    {openDropdownSlotIndex === slotIndex && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-40 bg-transparent" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenDropdownSlotIndex(null);
+                          }} 
+                        />
+                        <div className="absolute left-1/2 -translate-x-1/2 lg:left-auto lg:right-0 lg:translate-x-0 top-full mt-2 w-72 rounded-2xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-lg p-2.5 z-50 animate-fade-in flex flex-col gap-1">
+                          <div className="text-[10px] uppercase font-black tracking-widest text-[var(--theme-text)] opacity-50 px-2.5 py-1.5 border-b border-[var(--theme-border)]">
+                            Choose Calculator
+                          </div>
+                          {unassignedCalculators.length === 0 ? (
+                            <div className="text-xs text-[var(--theme-text)] opacity-50 px-2.5 py-3 text-center">
+                              All calculators are in use!
+                            </div>
+                          ) : (
+                            unassignedCalculators.map((tab) => (
+                              <button
+                                key={tab.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAssignSlot(slotIndex, tab.id);
+                                }}
+                                className="flex items-start gap-2.5 p-2 rounded-xl text-left hover:bg-[var(--theme-bg)] transition-all duration-200 cursor-pointer w-full"
+                              >
+                                <span className="p-1.5 rounded-lg bg-[var(--theme-accent-light)] text-[var(--theme-accent)] mt-0.5">
+                                  {tab.icon}
+                                </span>
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-[var(--theme-heading)]">{tab.name}</span>
+                                  <span className="text-[10px] text-[var(--theme-text)] opacity-70 leading-normal">{tab.desc}</span>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              }
+            })}
           </div>
         </div>
 
