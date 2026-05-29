@@ -65,18 +65,18 @@ body {
 }
 
 .theme-unicorn {
-  --theme-bg: linear-gradient(135deg, #fff1f2, #ffe4e6, #fae8ff, #f3e8ff, #e0f2fe);
-  --theme-panel: rgba(255, 255, 255, 0.72);
-  --theme-panel-hover: rgba(255, 255, 255, 0.85);
-  --theme-text: #581c87;
+  --theme-bg: linear-gradient(135deg, #ffe5e5, #ffebe0, #fffdd0, #e0ffeb, #e0f5ff, #f0e6ff, #ffe5e5);
+  --theme-panel: rgba(255, 255, 255, 0.75);
+  --theme-panel-hover: rgba(255, 255, 255, 0.88);
+  --theme-text: #4c1d95;
   --theme-heading: #1e1b4b;
-  --theme-border: rgba(216, 180, 254, 0.6);
-  --theme-accent: #d946ef;
-  --theme-accent-hover: #c084fc;
-  --theme-accent-light: rgba(245, 208, 254, 0.4);
-  --theme-accent-text: #db2777;
-  --theme-shadow: 0 12px 30px -4px rgba(217, 70, 239, 0.12), 0 8px 16px -8px rgba(139, 92, 246, 0.08);
-  --theme-slider-track: rgba(216, 180, 254, 0.4);
+  --theme-border: rgba(167, 139, 250, 0.4);
+  --theme-accent: #6366f1;
+  --theme-accent-hover: #4f46e5;
+  --theme-accent-light: rgba(99, 102, 241, 0.15);
+  --theme-accent-text: #4f46e5;
+  --theme-shadow: 0 12px 30px -4px rgba(99, 102, 241, 0.12), 0 8px 16px -8px rgba(139, 92, 246, 0.08);
+  --theme-slider-track: linear-gradient(to right, #ffb3b3, #ffd1b3, #fffca3, #b3ffc2, #b3e7ff, #d7b3ff);
   backdrop-filter: blur(8px);
 }
 

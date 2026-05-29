@@ -17,8 +17,7 @@ const getInitialTheme = (): ThemeType => {
   if (saved && ['light', 'dark', 'pink', 'unicorn'].includes(saved)) {
     return saved;
   }
-  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  return isDark ? 'dark' : 'light';
+  return 'light';
 };
 
 const getInitialLocale = (): LocaleType => {
@@ -130,7 +129,7 @@ function App() {
       {/* Bottom Footer Section */}
       <footer className="relative z-10 w-full py-8 border-t border-[var(--theme-border)] text-center select-none bg-[var(--theme-panel)] transition-colors duration-300">
         <p className="text-[10px] uppercase font-bold tracking-widest text-[var(--theme-text)] opacity-70 mb-1">
-          ✦ ForwardCalc ✦
+          ✦ GrowthCalc ✦
         </p>
         <p className="text-[10px] text-[var(--theme-text)] opacity-50">
           Created for interactive planning, compounding visualizations, and tax efficiency modeling.

@@ -36,7 +36,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme, l
       id: 'unicorn',
       name: 'Unicorn',
       icon: <Sparkles className="w-4 h-4 animate-pulse" />,
-      activeColor: 'bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 text-purple-950 font-bold border-purple-200 shadow-md',
+      activeColor: 'bg-gradient-to-r from-red-200 via-yellow-100 via-green-100 via-blue-200 to-purple-200 text-indigo-950 font-bold border-indigo-200 shadow-md',
     },
   ];
 
@@ -95,7 +95,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme, l
         </div>
         <div>
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--theme-heading)] font-display m-0 leading-none">
-            Forward<span className="text-[var(--theme-accent)] transition-colors duration-300">Calc</span>
+            Growth<span className="text-[var(--theme-accent)] transition-colors duration-300">Calc</span>
           </h1>
           <p className="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text)] opacity-70">
             Interactive Growth Simulators
