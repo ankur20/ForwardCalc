@@ -25,6 +25,20 @@ const getInitialLocale = (): LocaleType => {
   if (saved && ['in', 'uk', 'us', 'fr', 'de', 'ar'].includes(saved)) {
     return saved;
   }
+  
+  // Detect based on browser language
+  const browserLangs = navigator.languages || [navigator.language];
+  for (const lang of browserLangs) {
+    if (!lang) continue;
+    const lowerLang = lang.toLowerCase();
+    if (lowerLang.startsWith('en-gb')) return 'uk';
+    if (lowerLang.startsWith('en-in') || lowerLang.includes('hi')) return 'in';
+    if (lowerLang.startsWith('en')) return 'us';
+    if (lowerLang.startsWith('fr')) return 'fr';
+    if (lowerLang.startsWith('de')) return 'de';
+    if (lowerLang.startsWith('ar')) return 'ar';
+  }
+  
   return 'uk';
 };
 
@@ -32,6 +46,13 @@ function App() {
   const [theme, setTheme] = useState<ThemeType>(getInitialTheme);
   const [locale, setLocale] = useState<LocaleType>(getInitialLocale);
   const [activeTab, setActiveTab] = useState<TabType>('sip');
+
+  // Redirect to 'sip' tab if activeTab is 'tax' and locale is not 'uk'
+  useEffect(() => {
+    if (locale !== 'uk' && activeTab === 'tax') {
+      setActiveTab('sip');
+    }
+  }, [locale, activeTab]);
 
   // Sync theme preference to localStorage
   useEffect(() => {
@@ -78,6 +99,8 @@ function App() {
     }
   ];
 
+  const filteredTabs = tabs.filter(t => t.id !== 'tax' || locale === 'uk');
+
   return (
     <div className={`theme-${theme} min-h-screen transition-colors duration-500 bg-[var(--theme-bg)] flex flex-col justify-between`} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       
@@ -91,8 +114,8 @@ function App() {
         
         {/* Navigation Selector */}
         <div className="w-full max-w-7xl mx-auto px-4 md:px-8 mb-8 select-none">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 p-1.5 rounded-3xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300">
-            {tabs.map((tab) => (
+          <div className={`grid grid-cols-2 ${filteredTabs.length === 5 ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-2.5 p-1.5 rounded-3xl bg-[var(--theme-panel)] border border-[var(--theme-border)] shadow-sm transition-all duration-300`}>
+            {filteredTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
