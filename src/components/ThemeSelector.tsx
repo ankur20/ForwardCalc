@@ -97,7 +97,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme, l
           <h1 className="text-xl sm:text-2xl font-black tracking-tight text-[var(--theme-heading)] font-display m-0 leading-none">
             Growth<span className="text-[var(--theme-accent)] transition-colors duration-300">Calc</span>
           </h1>
-          <p className="text-[10px] uppercase font-bold tracking-wider text-[var(--theme-text)] opacity-70">
+          <p className="text-xs uppercase font-bold tracking-wider text-[var(--theme-text)] opacity-70">
             Interactive Growth Simulators
           </p>
         </div>
@@ -121,7 +121,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ theme, setTheme, l
                 title={config.name}
               >
                 <span className="text-sm">{config.flag}</span>
-                <span className="uppercase text-[10px] tracking-tight">{loc}</span>
+                <span className="uppercase text-xs tracking-tight">{loc}</span>
               </button>
             );
           })}

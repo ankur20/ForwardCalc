@@ -6,6 +6,19 @@
   font-family: 'Outfit', sans-serif;
   scroll-behavior: smooth;
   transition: background-color 0.4s ease, color 0.4s ease;
+  font-size: 16.5px;
+}
+
+@media (min-width: 640px) {
+  :root {
+    font-size: 17.5px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    font-size: 19px;
+  }
 }
 
 body {
@@ -212,4 +225,9 @@ input[type=range]::-moz-range-thumb {
 
 .graph-glow {
   animation: line-glow 3s ease-in-out infinite;
+}
+
+/* Override absolute 10px fonts to scale dynamically with root rem sizing */
+.text-\[10px\] {
+  font-size: 0.72rem !important;
 }
